@@ -211,10 +211,45 @@ void webcfgPackUnpack(char *blob)
 		
 }
 
+
+void test_server_unpack()
+{
+	webcfgparam_t *pm;
+	int len =0, i =0;
+	void* rootbuff;
+	char *binfileData = NULL;
+
+	int status = readFromFile("part_3", &binfileData , &len);
+	
+	if(status)
+	{
+		rootbuff = ( void*)binfileData;
+
+		//decode root doc
+		printf("--------------decode root doc-------------\n");
+		pm = webcfgparam_convert( rootbuff, len+1 );
+		int err = errno;
+		printf( "errno: %s\n", webcfgparam_strerror(err) );
+		CU_ASSERT_FATAL( NULL != pm );
+		CU_ASSERT_FATAL( NULL != pm->entries );
+		CU_ASSERT_FATAL( 1 == pm->entries_count );
+		CU_ASSERT_STRING_EQUAL( "Device.NAT.PortMapping.", pm->entries[0].name );
+		//CU_ASSERT_STRING_EQUAL( blob, pm->entries[0].value );
+		CU_ASSERT_FATAL( 0 == pm->entries[0].type );
+		for(i = 0; i < (int)pm->entries_count ; i++)
+		{
+			printf("pm->entries[%d].name %s\n", i, pm->entries[i].name);
+			printf("pm->entries[%d].value %s\n" , i, pm->entries[i].value);
+			printf("pm->entries[%d].type %d\n", i, pm->entries[i].type);
+		}
+	}
+}
+
 void add_suites( CU_pSuite *suite )
 {
     *suite = CU_add_suite( "tests", NULL, NULL );
-    CU_add_test( *suite, "test_webcfgpack_unpack", test_webcfgpack_unpack);
+    //CU_add_test( *suite, "test_webcfgpack_unpack", test_webcfgpack_unpack);
+    CU_add_test( *suite, "test_server_unpack", test_server_unpack);
 }
 
 /*----------------------------------------------------------------------------*/

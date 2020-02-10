@@ -39,7 +39,7 @@ void test_multipart()
 	if(configRet == 0)
 	{
 		printf("config ret success\n");
-		printf("webConfigData is %s\n", webConfigData);
+		//printf("webConfigData is %s\n", webConfigData);
 		
 	}	
 	else

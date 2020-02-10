@@ -38,7 +38,7 @@ struct token_data {
 /*----------------------------------------------------------------------------*/
 /*                            File Scoped Variables                           */
 /*----------------------------------------------------------------------------*/
-static char g_interface[32]="eth0";
+static char g_interface[32]="enp0s5";
 static char g_ETAG[64]={'\0'};
 char webpa_auth_token[4096]={'\0'};
 #define DATA_SIZE 2321
@@ -50,7 +50,8 @@ size_t write_callback_fn(void *buffer, size_t size, size_t nmemb, struct token_d
 size_t header_callback(char *buffer, size_t size, size_t nitems);
 void stripSpaces(char *str, char **final_str);
 void createCurlheader( struct curl_slist *list, struct curl_slist **header_list);
-static size_t datareader(void *ptr, size_t size, size_t nmemb, void* userp);
+void parse_multipart(char *ptr, int no_of_bytes, int part_no);
+//static size_t datareader(void *ptr, size_t size, size_t nmemb, void* userp);
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
@@ -73,6 +74,12 @@ int webcfg_http_request(char *webConfigURL, char **configData, int r_count, long
 	long response_code = 0;
 	char *interface = NULL;
 	char *ct = NULL;
+	char *boundary = NULL;
+	char *str=NULL;
+	char *line_boundary = NULL;
+	char *last_line_boundary = NULL;
+	char *str_body = NULL;
+
 	//char *webConfigURL= NULL;
 	int content_res=0;
 	struct token_data data;
@@ -130,8 +137,8 @@ int webcfg_http_request(char *webConfigURL, char **configData, int r_count, long
 		//printf("Set CURLOPT_HEADERFUNCTION option\n");
 		curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, header_callback);
 
-		curl_easy_setopt(curl, CURLOPT_READFUNCTION, datareader);
-    		curl_easy_setopt(curl, CURLOPT_READDATA,dataVal);
+		//curl_easy_setopt(curl, CURLOPT_READFUNCTION, datareader);
+    		//curl_easy_setopt(curl, CURLOPT_READDATA,dataVal);
 		// setting curl resolve option as default mode.
 		//If any failure, retry with v4 first and then v6 mode. 
 		if(r_count == 1)
@@ -178,13 +185,79 @@ int webcfg_http_request(char *webConfigURL, char **configData, int r_count, long
 		{
                         printf("checking content type\n");
 			content_res = curl_easy_getinfo(curl, CURLINFO_CONTENT_TYPE, &ct);
-			printf("ct is %s\n", ct);
-			if(!content_res && ct)
-			{
-                                *configData = strdup(data.data);
-                                //printf("configData received from cloud is %s\n", *configData);
-				printf("configData len is %lu\n", strlen(*configData));
+			printf("ct is %s, content_res is %d\n", ct, content_res);
+			// fetch boundary
+			str = strtok(ct,";");
+			str = strtok(NULL, ";");			
+			boundary= strtok(str,"=");
+			boundary= strtok(NULL,"=");
+			printf( "boundary %s\n", boundary );
+			int boundary_len= strlen(boundary);
+
+			line_boundary  = (char *)malloc(sizeof(char) * (boundary_len +5));
+			snprintf(line_boundary,boundary_len+5,"--%s\r\n",boundary);
+			printf( "line_boundary %s, len %ld\n", line_boundary, strlen(line_boundary) );
+
+			last_line_boundary  = (char *)malloc(sizeof(char) * (boundary_len + 5));
+			snprintf(last_line_boundary,boundary_len+5,"--%s--",boundary);
+			printf( "last_line_boundary %s, len %ld\n", last_line_boundary, strlen(last_line_boundary) );
+
+			// Use --boundary to split
+			str_body = malloc(sizeof(char) * data.size + 1);
+			str_body = memcpy(str_body, data.data, data.size + 1);
+			int num_of_parts = 0;
+			char *ptr_lb=str_body;
+			int index1=0, index2 =0;
+			
+			while((ptr_lb - str_body) < (int)data.size) {
+				ptr_lb = memchr(ptr_lb, '-', data.size - (ptr_lb - str_body));
+				if(0 == memcmp(ptr_lb, last_line_boundary, strlen(last_line_boundary)))
+				{
+					num_of_parts++;	
+					printf("last line boundary match found at location %ld\n", ptr_lb-str_body);
+					if(num_of_parts % 2 ==0 ) {
+						index2 = ptr_lb-str_body-strlen(line_boundary);
+						printf("index2 %d\n",index2);
+						parse_multipart(str_body+index1,index2 - index1 - 1, num_of_parts);
+					}
+					else {
+						index1 = ptr_lb-str_body;
+						printf("index1 %d\n",index1);
+						parse_multipart(str_body+index2,index1 - index2 - 1,num_of_parts);
+					}
+					
+					break;
+
+				}		
+				else if(0 == memcmp(ptr_lb, line_boundary, strlen(line_boundary)))
+				{
+					num_of_parts++;	
+					printf("%d line boundary match found at location %ld\n", num_of_parts, ptr_lb-str_body);
+					ptr_lb = ptr_lb + strlen(line_boundary);
+					if(num_of_parts % 2 ==0 ) {
+						index2 = ptr_lb-str_body-strlen(line_boundary);
+						printf("index2 %d\n",index2);
+						parse_multipart(str_body+index1,index2 - index1 - 1,num_of_parts);
+						index2 = index2+strlen(line_boundary);
+						printf("index2 %d\n",index2);
+					}
+					else {
+						index1 = ptr_lb-str_body;
+						printf("index1 %d\n",index1);
+					}
+				}
+				else
+				{
+					printf("No match for line boundary\n");
+					ptr_lb++;
+					//break;
+				}
+				
 			}
+
+			printf("Number of sub docs %d\n",num_of_parts-1);
+			*configData=str_body;
+
 		}
 		WEBCFG_FREE(data.data);
 		curl_easy_cleanup(curl);
@@ -254,7 +327,7 @@ void xxd( const void *buffer, const size_t length )
     }
 }
 
-static size_t datareader(void *ptr, size_t size, size_t nmemb, void* userp)
+/** static size_t datareader(void *ptr, size_t size, size_t nmemb, void* userp)
 {
   //read callback
   char *pooh = ( char *)userp;
@@ -263,13 +336,13 @@ static size_t datareader(void *ptr, size_t size, size_t nmemb, void* userp)
     return 0;
 
   if(Curr_index < DATA_SIZE) {
-    *(char *)ptr = pooh[Curr_index]; /* copy one single byte */
+    *(char *)ptr = pooh[Curr_index]; // copy one single byte 
     Curr_index++;
-    return 1;                        /* we return 1 byte at a time! */
+    return 1;                        // we return 1 byte at a time! s
   }
 	printf("=========inside reader.. ptr %s\n", (char*)ptr);
   return 0;
-}
+}*/
 
 /* @brief callback function for writing libcurl received data
  * @param[in] buffer curl delivered data which need to be saved.
@@ -279,7 +352,7 @@ static size_t datareader(void *ptr, size_t size, size_t nmemb, void* userp)
 */
 size_t write_callback_fn(void *buffer, size_t size, size_t nmemb, struct token_data *data)
 {
-    size_t index = data->size;
+    //size_t index = data->size;
     size_t n = (size * nmemb);
     char* tmp; 
     //char*mime_value = NULL;
@@ -298,19 +371,11 @@ size_t write_callback_fn(void *buffer, size_t size, size_t nmemb, struct token_d
         printf("Failed to allocate memory for data\n");
         return 0;
     }
-	printf("------hex dump--------\n");
-	 xxd( buffer, nmemb );
-	printf("------hex dump--------\n");
+	//printf("------hex dump--------\n");
+	 //xxd( buffer, nmemb );
+	//printf("------hex dump--------\n");
 
-	/*multipart_parser* parser = multipart_parser_init(boundary, &callbacks);
-	multipart_parser_execute(parser, body, length);
-	multipart_parser_free(parser);
-
-	multipart_parser_settings callbacks;
-	memset(&callbacks, 0, sizeof(multipart_parser_settings));
-	callbacks.on_header_field = read_header_name;
-	callbacks.on_header_value = read_header_value;
-*/
+	
 
 	/*char *p = strtok(buffer,"2xKIxjfJuErFW+hmNCwEoMoY8I+ECM9efrV6EI4efSSW9QjI");
 	char n1[2300];
@@ -338,9 +403,9 @@ size_t write_callback_fn(void *buffer, size_t size, size_t nmemb, struct token_d
 	}*/
 
 
-    memcpy((data->data + index), buffer, n);
+    memcpy(data->data, buffer, n);
     data->data[data->size] = '\0';
-    printf("size * nmemb is %lu\n", size * nmemb);
+    printf("data size %lu\n", data->size);
     return size * nmemb;
 }
 
@@ -372,7 +437,7 @@ size_t header_callback(char *buffer, size_t size, size_t nitems)
 			}
 		}
 	}
-	printf("size %lu\n", size);
+	printf("header_callback size %lu\n", size);
 	return nitems;
 }
 
@@ -409,7 +474,7 @@ void createCurlheader( struct curl_slist *list, struct curl_slist **header_list)
 
 	printf("Start of createCurlheader\n");
 	//add auth token here. for test purpose.
-	strcpy(webpa_auth_token, "");
+	strcpy(webpa_auth_token, "eyJhbGciOiJSUzI1NiIsImtpZCI6InRoZW1pcy0yMDE3MDEiLCJ0eXAiOiJKV1QifQ.eyJhdWQiOiJYTWlEVCIsImNhcGFiaWxpdGllcyI6WyJ4MTppc3N1ZXI6dGVzdDouKjphbGwiXSwiZXhwIjoxNTgzNTI2MjgwLCJpYXQiOjE1ODA5MzQyODAsImlzcyI6InRoZW1pcyIsImp0aSI6Il9wbXVHeVk4YkE4MmxONlI0dF9zYlEiLCJtYWMiOiJiNDJhMGU4NWU3OWEiLCJuYmYiOjE1ODA5MzQyNjUsInBhcnRuZXItaWQiOiJjb21jYXN0Iiwic3ViIjoiY2xpZW50OnN1cHBsaWVkIiwidHJ1c3QiOjEwMDAsInV1aWQiOiIxMjM0NSJ9.ZoneYFhGDpWF2xi-05vobf9s6ywPv-AuQjbHcFqduNYjEM0fAZCJgHJIYI4n0N3rc-qqYDqSa8ixF67W9FId5rvmTXZjzAuiBjHI7FKZY2cOGKDWM57u4j8LOy8X9hEzL2p0WCxVk9MWnK-zZO0K7XXdKc-f4BBohFCvZPbMQw7_erseOXfFiDFcKy19s1NsNXWkEzQNJYhfbwQfXcbMQwnqbRxO9iBx_pW-p2KpajD94yGtXkCpcVuCfbgv3llgymvrGlv6YZyz-yPb1xUex9G0Nrx3nz3Cpp7FzzdbuoW07tmxhMd_O2kyJfoQkPZd_8tbv6rWqtrREqBfp1WIDg");
 	if(strlen(webpa_auth_token)==0)
 	{
 		printf(">>>>>>><token> is NULL.. hardcode token here. for test purpose.\n");
@@ -426,5 +491,43 @@ void createCurlheader( struct curl_slist *list, struct curl_slist **header_list)
 	list = curl_slist_append(list, "Accept: application/msgpack");
 
 	*header_list = list;
+}
+
+
+int writeToFile(char *filename, char *data, int len)
+{
+	FILE *fp;
+	fp = fopen(filename , "w+");
+	if (fp == NULL)
+	{
+		printf("Failed to open file %s\n", filename );
+		return 0;
+	}
+	if(data !=NULL)
+	{
+		fwrite(data, len, 1, fp);
+		fclose(fp);
+		return 1;
+	}
+	else
+	{
+		printf("WriteToFile failed, Data is NULL\n");
+		return 0;
+	}
+}
+
+void parse_multipart(char *ptr, int no_of_bytes, int part_no) {
+	
+	printf("########################################\n");
+	int i = 0;
+	char *filename = malloc(sizeof(char)*6);
+	snprintf(filename,6,"%s%d","part",part_no);
+	while(i <= no_of_bytes)
+	{
+		putc(*(ptr+i),stdout);
+		i++;
+	}
+	printf("########################################\n");
+	writeToFile(filename,ptr,no_of_bytes);
 }
 

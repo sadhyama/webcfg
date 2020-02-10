@@ -59,17 +59,17 @@ add_dependencies(libmsgpack msgpack)
 
 # curl external dependency
 #-------------------------------------------------------------------------------
-#ExternalProject_Add(curl
-#    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/_prefix/curl
-#    GIT_REPOSITORY https://github.com/curl/curl.git
-#    GIT_TAG "curl-7_64_1"
-#    CMAKE_ARGS += -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -DBUILD_TESTING=OFF
-#)
-#add_library(libcurl STATIC SHARED IMPORTED)
-#add_dependencies(libcurl curl)
-find_library( LIB_CURL,
-              NAMES curl
-              PATHS /usr/lib64 )
+ExternalProject_Add(curl
+    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/_prefix/curl
+    GIT_REPOSITORY https://github.com/curl/curl.git
+    GIT_TAG "curl-7_64_1"
+    CMAKE_ARGS += -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -DBUILD_TESTING=OFF
+)
+add_library(libcurl STATIC SHARED IMPORTED)
+add_dependencies(libcurl curl)
+#find_library( LIB_CURL,
+#              NAMES curl
+#              PATHS /usr/lib64 )
 
 link_directories ( ${LIBRARY_DIR} ${COMMON_LIBRARY_DIR} ${LIBRARY_DIR64} )
 

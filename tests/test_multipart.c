@@ -18,18 +18,27 @@
 #include <errno.h>
 #include <stdio.h>
 #include <CUnit/Basic.h>
+#include "../src/webcfgdoc.h"
 #include "../src/webcfgparam.h"
 #include "../src/multipart.h"
 #include <msgpack.h>
 #include <curl/curl.h>
 
 char *url = NULL;
+
 void test_multipart()
 {
 	int r_count=0;
 	int configRet = -1;
+        webcfgparam_t *pm;
 	char *webConfigData = NULL;
 	long res_code;
+          
+        int len =0, i=0;
+	void* subdbuff;
+	char *subfileData = NULL;
+        int err;
+
 	if(url == NULL)
 	{
 		printf("\nProvide config URL as argument\n");
@@ -40,6 +49,35 @@ void test_multipart()
 	{
 		printf("config ret success\n");
 		//printf("webConfigData is %s\n", webConfigData);
+                int status = subdocparse("part3",&subfileData,&len);
+                if(status)
+		{       
+                        
+			subdbuff = ( void*)subfileData;
+
+			//decode root doc
+			printf("--------------decode root doc-------------\n");
+			pm = webcfgparam_convert( subdbuff, len+1 );
+                        
+                        err = errno;
+			printf( "errno: %s\n", webcfgparam_strerror(err) );
+			CU_ASSERT_FATAL( NULL != pm );
+			CU_ASSERT_FATAL( NULL != pm->entries );
+			//CU_ASSERT_FATAL( 1 == pm->entries_count );
+                        //CU_ASSERT_STRING_EQUAL("154363892090392891829182011",pm->version);
+			//CU_ASSERT_STRING_EQUAL( "Device.NAT.PortMapping.", pm->entries[0].name );
+			//CU_ASSERT_STRING_EQUAL( blob, pm->entries[0].value );
+			//CU_ASSERT_FATAL( 0 == pm->entries[0].type );
+			for(i = 0; i < (int)pm->entries_count ; i++)
+			{
+				printf("pm->entries[%d].name %s\n", i, pm->entries[i].name);
+				printf("pm->entries[%d].value %s\n" , i, pm->entries[i].value);
+				printf("pm->entries[%d].type %d\n", i, pm->entries[i].type);
+			}
+			
+                        
+                 }
+                   webcfgparam_destroy( pm );
 		
 	}	
 	else

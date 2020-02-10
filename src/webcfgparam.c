@@ -126,7 +126,7 @@ int process_params( param_t *e, msgpack_object_map *map )
     while( (0 < objects_left) && (0 < left--) ) {
         if( MSGPACK_OBJECT_STR == p->key.type ) {
             if( MSGPACK_OBJECT_POSITIVE_INTEGER == p->val.type ) {
-                if( 0 == match(p, "datatype") ) {
+                if( 0 == match(p, "dataType") ) {
                     if( UINT16_MAX < p->val.via.u64 ) {
 			//printf("e->type is %d\n", e->type);
                         errno = PM_INVALID_DATATYPE;

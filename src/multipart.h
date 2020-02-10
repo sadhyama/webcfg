@@ -26,6 +26,7 @@
  *  @return 0 on success, error otherwise
  */
 int webcfg_http_request(char *webConfigURL, char **configData, int r_count, long *code);
+int subdocparse(char *filename,char **data, int *len);
 
 
 

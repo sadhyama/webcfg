@@ -38,7 +38,7 @@ struct token_data {
 /*----------------------------------------------------------------------------*/
 /*                            File Scoped Variables                           */
 /*----------------------------------------------------------------------------*/
-static char g_interface[32]="enp0s5";
+static char g_interface[32]="wlan0";
 static char g_ETAG[64]={'\0'};
 char webpa_auth_token[4096]={'\0'};
 #define DATA_SIZE 2321
@@ -79,7 +79,7 @@ int webcfg_http_request(char *webConfigURL, char **configData, int r_count, long
 	char *line_boundary = NULL;
 	char *last_line_boundary = NULL;
 	char *str_body = NULL;
-
+      
 	//char *webConfigURL= NULL;
 	int content_res=0;
 	struct token_data data;
@@ -529,5 +529,45 @@ void parse_multipart(char *ptr, int no_of_bytes, int part_no) {
 	}
 	printf("########################################\n");
 	writeToFile(filename,ptr,no_of_bytes);
+}
+
+int subdocparse(char *filename, char **data, int *len)
+{
+     FILE *fp = fopen(filename, "rb");
+     int ch_count = 0, value_count = 0;
+     char line[256];
+     if (fp == NULL)
+	{
+		printf("Failed to open file %s\n", filename);
+		return 0;
+	}
+         else
+	    {       
+                fseek(fp, 0, SEEK_END);
+	        ch_count = ftell(fp);
+	        fseek(fp, 0, SEEK_SET);
+	        *data = (char *) malloc(sizeof(char) * (ch_count + 1));
+	    
+	        while(fgets(line, sizeof(line), fp)!= NULL)
+	             {    
+	                  if(strstr(line, ETAG_HEADER)){
+		        
+                              value_count = ftell(fp) + 2; // 2 is for newline
+                              fseek(fp, value_count, SEEK_SET);
+                              fread(*data,1, ch_count,fp);
+		        
+                              *len = ch_count;
+	                      (*data)[ch_count] ='\0';
+		              fclose(fp);
+                               printf("hi ch_count %d\n",ch_count);
+                              writeToFile("buff1.bin", (char*)*data,(ch_count-value_count));
+			      return 1;
+		        
+		              }
+                      }
+              
+	        fclose(fp);
+	        return 0;
+	       }
 }
 

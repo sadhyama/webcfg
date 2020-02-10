@@ -17,7 +17,7 @@
 #include <string.h>
 #include <msgpack.h>
 
-#include "helpers.h"
+#include "array_helpers.h"
 #include "webcfgdoc.h"
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
@@ -37,21 +37,19 @@
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
 /*----------------------------------------------------------------------------*/
-msgpack_object* __finder( const char *name, 
+msgpack_object* __finderarray( const char *name, 
                           msgpack_object_type expect_type,
                           msgpack_object_map *map );
 
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
-void* helper_convert( const void *buf, size_t len,
-                      size_t struct_size, const char *wrapper,
-                      msgpack_object_type expect_type, bool optional,
+void* helper_convert_array( const void *buf, size_t len,
+                      size_t struct_size, bool optional,
                       process_fn_t process,
                       destroy_fn_t destroy )
 {
     void *p = malloc( struct_size );
-
     if( NULL == p ) {
         errno = HELPERS_OUT_OF_MEMORY;
     } else {
@@ -64,22 +62,21 @@ void* helper_convert( const void *buf, size_t len,
 
             msgpack_unpacked_init( &msg );
 
-            /* The outermost wrapper MUST be a map. */
+            /* The outermost wrapper is not present */
             mp_rv = msgpack_unpack_next( &msg, (const char*) buf, len, &offset );
-	    printf("mp_rv is %d MSGPACK_UNPACK_SUCCESS %d offset %lu\n", mp_rv, MSGPACK_UNPACK_SUCCESS, offset);
-	msgpack_object obj = msg.data;
-	msgpack_object_print(stdout, obj);
-            printf("\nMSGPACK_OBJECT_MAP is %d  msg.data.type %d\n", MSGPACK_OBJECT_MAP, msg.data.type);
+			printf("mp_rv is %d MSGPACK_UNPACK_SUCCESS %d offset %lu\n", mp_rv, MSGPACK_UNPACK_SUCCESS, offset);
+			msgpack_object obj = msg.data;
+			msgpack_object_print(stdout, obj);
 
             if( (MSGPACK_UNPACK_SUCCESS == mp_rv) && (0 != offset) &&
-                (MSGPACK_OBJECT_MAP == msg.data.type) )
+                (MSGPACK_OBJECT_ARRAY == msg.data.type) )
             {
                 msgpack_object *inner;
 
                 inner = &msg.data;
-                if( NULL != wrapper ) {
-                    inner = __finder( wrapper, expect_type, &msg.data.via.map );
-                }
+                /*if( NULL != wrapper ) {
+                    inner = __finderarray( wrapper, expect_type, &msg.data.via.map );
+                }*/
 
                 if( ((true == optional) && (NULL == inner)) ||
                     ((NULL != inner) && (0 == (process)(p, inner))) )
@@ -89,6 +86,7 @@ void* helper_convert( const void *buf, size_t len,
                     return p;
                 }
             } else {
+		printf("Invalid first element\n");
                 errno = HELPERS_INVALID_FIRST_ELEMENT;
             }
 
@@ -98,15 +96,16 @@ void* helper_convert( const void *buf, size_t len,
             p = NULL;
         }
     }
-
+	
     return p;
 }
 
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
 /*----------------------------------------------------------------------------*/
-
-msgpack_object* __finder( const char *name, 
+//To find wrapper map object. 
+//As blob starts with array and map is not present, this check is not required.
+msgpack_object* __finderarray( const char *name, 
                           msgpack_object_type expect_type,
                           msgpack_object_map *map )
 {
@@ -121,7 +120,6 @@ msgpack_object* __finder( const char *name,
             }
         }
     }
-
     errno = HELPERS_MISSING_WRAPPER;
     return NULL;
 }

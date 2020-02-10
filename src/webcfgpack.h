@@ -13,8 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef __WEBCFG_H__
+#define __WEBCFG_H__
 
-#include "webcfg.h"
+#include <stdint.h>
+
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
@@ -24,50 +27,31 @@
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
 /*----------------------------------------------------------------------------*/
-/* none */
+struct data {
+    char *name;
+    char *value;
+    uint16_t type;
+};
 
-/*----------------------------------------------------------------------------*/
-/*                            File Scoped Variables                           */
-/*----------------------------------------------------------------------------*/
-/* none */
-
-/*----------------------------------------------------------------------------*/
-/*                             Function Prototypes                            */
-/*----------------------------------------------------------------------------*/
-/* none */
+typedef struct data_struct {
+    size_t count;
+    struct data *data_items;
+} data_t;
 
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
 
-/* See webcfg.h for details. */
-int webcfg_init( struct webcfg_opts *opts )
-{
-    (void) opts;
+/**
+ *  Packs webconfig root config doc.
+ *
+ *  @param 
+ *
+ *  @return 0 if the operation was a success, error otherwise
+ */
+ssize_t webcfg_pack_rootdoc( char *blob, const data_t *packData, void **data );
 
-    return 0;
-}
 
-/* See webcfg.h for details. */
-void webcfg_shutdown( void )
-{
-}
 
-/* See webcfg.h for details. */
-int webcfg_update_actual( const all_t *cfg )
-{
-    (void) cfg;
 
-    return 0;
-}
-
-/* See webcfg.h for details. */
-void webcfg_free( all_t *cfg )
-{
-    (void) cfg;
-}
-
-/*----------------------------------------------------------------------------*/
-/*                             Internal functions                             */
-/*----------------------------------------------------------------------------*/
-/* none */
+#endif

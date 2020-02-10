@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Comcast Cable Communications Management, LLC
+ * Copyright 2019 Comcast Cable Communications Management, LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef __XDNS_H__
-#define __XDNS_H__
+#ifndef __WEBCFGDOC_H__
+#define __WEBCFGDOC_H__
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <msgpack.h>
+typedef struct
+{
+    char *name;
+    char *url;
+    uint16_t version;
+} doc_t;
 
 typedef struct {
-    uint32_t default_ipv4;      /* (R) V 1.0.0 */
-    uint8_t default_ipv6[16];   /* (R) V 1.0.0 */
-} xdns_t;
+    doc_t *entries;       
+    size_t      entries_count;
+} webcfgdoc_t;
 
 /**
- *  This function converts a msgpack buffer into an xdns_t structure
+ *  This function converts a msgpack buffer into an webcfgdoc_t structure
  *  if possible.
  *
  *  @param buf the buffer to convert
@@ -33,14 +40,14 @@ typedef struct {
  *
  *  @return NULL on error, success otherwise
  */
-xdns_t* xdns_convert( const void *buf, size_t len );
+webcfgdoc_t* webcfgdoc_convert( const void *buf, size_t len );
 
 /**
- *  This function destroys an xdns_t object.
+ *  This function destroys an webcfgdoc_t object.
  *
- *  @param e the xdns to destroy
+ *  @param e the webcfgdoc to destroy
  */
-void xdns_destroy( xdns_t *d );
+void webcfgdoc_destroy( webcfgdoc_t *d );
 
 /**
  *  This function returns a general reason why the conversion failed.
@@ -49,6 +56,6 @@ void xdns_destroy( xdns_t *d );
  *
  *  @return the constant string (do not alter or free) describing the error
  */
-const char* xdns_strerror( int errnum );
+const char* webcfgdoc_strerror( int errnum );
 
 #endif

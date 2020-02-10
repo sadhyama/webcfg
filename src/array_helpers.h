@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef __HELPERS_H__
-#define __HELPERS_H__
+#ifndef __ARRAY_HELPERS_H__
+#define __ARRAY_HELPERS_H__
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -61,14 +61,8 @@ typedef void (*destroy_fn_t)(void *);
  *  @returns the object after process has done it's magic to it on success, or
  *           NULL on error
  */
-void* helper_convert( const void *buf, size_t len,
-                      size_t struct_size, const char *wrapper,
-                      msgpack_object_type expect_type, bool optional,
-                      process_fn_t process,
-                      destroy_fn_t destroy );
 void* helper_convert_array( const void *buf, size_t len,
-                      size_t struct_size, const char *wrapper,
-                      msgpack_object_type expect_type, bool optional,
+                      size_t struct_size, bool optional,
                       process_fn_t process,
                       destroy_fn_t destroy );
 

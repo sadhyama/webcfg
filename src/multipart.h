@@ -13,39 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef __ALL_H__
-#define __ALL_H__
+#ifndef REQUEST_H
+#define REQUEST_H
 
 #include <stdint.h>
-#include <stdlib.h>
-#include "dhcp.h"
-#include "envelope.h"
-#include "firewall.h"
-#include "gre.h"
-#include "portmapping.h"
-#include "wifi.h"
-#include "xdns.h"
+#include <curl/curl.h>
+#define WEBCFG_FREE(__x__) if(__x__ != NULL) { free((void*)(__x__)); __x__ = NULL;} else {printf("Trying to free null pointer\n");}
+/**
+ *  Makes the HTTP request and provides the response.
+ *
+ *
+ *  @return 0 on success, error otherwise
+ */
+int webcfg_http_request(char *webConfigURL, char **configData, int r_count, long *code);
 
-typedef struct {
-    envelope_t *full_envelope;
 
-    envelope_t *dhcp_envelope;
-    dhcp_t *dhcp;
-
-    envelope_t *firewall_envelope;
-    firewall_t *firewall;
-
-    envelope_t *gre_envelope;
-    gre_t *gre;
-
-    envelope_t *portmapping_envelope;
-    portmapping_t *portmapping;
-
-    envelope_t *wifi_envelope;
-    wifi_t *wifi;
-
-    envelope_t *xdns_envelope;
-    xdns_t *xdns;
-} all_t;
 
 #endif

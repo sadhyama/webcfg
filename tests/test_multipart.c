@@ -1,5 +1,5 @@
  /**
-  * Copyright 2017 Comcast Cable Communications Management, LLC
+  * Copyright 2019 Comcast Cable Communications Management, LLC
   *
   * Licensed under the Apache License, Version 2.0 (the "License");
   * you may not use this file except in compliance with the License.
@@ -15,38 +15,43 @@
   *
  */
 #include <stdint.h>
-
+#include <errno.h>
+#include <stdio.h>
 #include <CUnit/Basic.h>
-#include "../src/http_headers.h"
+#include "../src/webcfgparam.h"
+#include "../src/multipart.h"
+#include <msgpack.h>
+#include <curl/curl.h>
 
-struct curl_slist* curl_slist_append( struct curl_slist *l, const char *s )
+char *url = NULL;
+void test_multipart()
 {
-    //printf( "Got: '%s'\n", s );
-    //printf( "Wanted: '%s'\n", (char*)l );
-    CU_ASSERT( 0 == strcmp((char*) l, s) );
-
-    return l;
+	int r_count=0;
+	int configRet = -1;
+	char *webConfigData = NULL;
+	long res_code;
+	if(url == NULL)
+	{
+		printf("\nProvide config URL as argument\n");
+		return;
+	}
+	configRet = webcfg_http_request(url, &webConfigData, r_count, &res_code);
+	if(configRet == 0)
+	{
+		printf("config ret success\n");
+		printf("webConfigData is %s\n", webConfigData);
+		
+	}	
+	else
+	{
+		printf("webcfg_http_request failed\n");
+	}
 }
-
-void test_add_header()
-{
-    int rv;
-    struct curl_slist *l;
-
-    l = (struct curl_slist*) "Example: foo";
-    rv = append_header( &l, "Example: %s", "foo" );
-    CU_ASSERT( 0 == rv );
-
-    l = (struct curl_slist*) "E------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------xample: foo";
-    rv = append_header( &l, "E------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------xample: %s", "foo" );
-    CU_ASSERT( 0 == rv );
-}
-
 
 void add_suites( CU_pSuite *suite )
 {
     *suite = CU_add_suite( "tests", NULL, NULL );
-    CU_add_test( *suite, "Add header", test_add_header);
+    CU_add_test( *suite, "Full", test_multipart);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -57,9 +62,11 @@ int main( int argc, char *argv[] )
     unsigned rv = 1;
     CU_pSuite suite = NULL;
  
-    (void ) argc;
-    (void ) argv;
-    
+    printf("argc %d \n", argc );
+    if(argv[1] !=NULL)
+    {
+    	url = strdup(argv[1]);
+    }
     if( CUE_SUCCESS == CU_initialize_registry() ) {
         add_suites( &suite );
 
@@ -75,8 +82,6 @@ int main( int argc, char *argv[] )
         CU_cleanup_registry();
 
     }
-
     return rv;
 }
-
 

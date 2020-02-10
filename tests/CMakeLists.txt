@@ -24,132 +24,56 @@ endif ()
 link_directories ( ${LIBRARY_DIR} )
 
 #-------------------------------------------------------------------------------
-#   test_dhcp
+#   test_webcfgparam
 #-------------------------------------------------------------------------------
-add_test(NAME test_dhcp COMMAND ${MEMORY_CHECK} ./test_dhcp)
-add_executable(test_dhcp test_dhcp.c ../src/dhcp.c ../src/helpers.c)
-target_link_libraries (test_dhcp -lcunit -lmsgpackc)
+add_test(NAME test_webcfgparam COMMAND ${MEMORY_CHECK} ./test_webcfgparam)
+add_executable(test_webcfgparam test_webcfgparam.c ../src/webcfgparam.c ../src/helpers.c)
+target_link_libraries (test_webcfgparam -lcunit -lmsgpackc)
 
-target_link_libraries (test_dhcp gcov -Wl,--no-as-needed )
-
-#-------------------------------------------------------------------------------
-#   test_envelope
-#-------------------------------------------------------------------------------
-add_test(NAME test_envelope COMMAND ${MEMORY_CHECK} ./test_envelope)
-add_executable(test_envelope test_envelope.c ../src/envelope.c ../src/helpers.c)
-target_link_libraries (test_envelope -lcunit -lmsgpackc)
-
-target_link_libraries (test_envelope gcov -Wl,--no-as-needed )
+target_link_libraries (test_webcfgparam gcov -Wl,--no-as-needed )
 
 #-------------------------------------------------------------------------------
-#   test_firewall
+#   test_webcfgdoc
 #-------------------------------------------------------------------------------
-add_test(NAME test_firewall COMMAND ${MEMORY_CHECK} ./test_firewall)
-add_executable(test_firewall test_firewall.c ../src/firewall.c ../src/helpers.c)
-target_link_libraries (test_firewall -lcunit -lmsgpackc)
+add_test(NAME test_webcfgdoc COMMAND ${MEMORY_CHECK} ./test_webcfgdoc)
+add_executable(test_webcfgdoc test_webcfgdoc.c ../src/webcfgdoc.c ../src/webcfgparam.c ../src/helpers.c ../src/array_helpers.c)
+target_link_libraries (test_webcfgdoc -lcunit -lmsgpackc)
 
-target_link_libraries (test_firewall gcov -Wl,--no-as-needed )
-
-#-------------------------------------------------------------------------------
-#   test_full
-#-------------------------------------------------------------------------------
-add_test(NAME test_full COMMAND ${MEMORY_CHECK} ./test_full)
-add_executable(test_full test_full.c ../src/full.c ../src/helpers.c)
-target_link_libraries (test_full -lcunit -lmsgpackc)
-
-target_link_libraries (test_full gcov -Wl,--no-as-needed )
-
+target_link_libraries (test_webcfgdoc gcov -Wl,--no-as-needed )
 
 #-------------------------------------------------------------------------------
-#   test_gre
+#   test_webcfgpack
 #-------------------------------------------------------------------------------
-add_test(NAME test_gre COMMAND ${MEMORY_CHECK} ./test_gre)
-add_executable(test_gre test_gre.c ../src/gre.c ../src/helpers.c)
-target_link_libraries (test_gre -lcunit -lmsgpackc)
+add_test(NAME test_webcfgpack COMMAND ${MEMORY_CHECK} ./test_webcfgpack)
+add_executable(test_webcfgpack test_webcfgpack.c ../src/webcfgdoc.c ../src/webcfgparam.c ../src/webcfgpack.c ../src/helpers.c ../src/array_helpers.c )
+target_link_libraries (test_webcfgpack -lcunit -lmsgpackc)
 
-target_link_libraries (test_gre gcov -Wl,--no-as-needed )
-
-
-#-------------------------------------------------------------------------------
-#   test_http_headers
-#-------------------------------------------------------------------------------
-add_test(NAME test_http_headers COMMAND ${MEMORY_CHECK} ./test_http_headers)
-add_executable(test_http_headers test_http_headers.c ../src/http_headers.c)
-target_link_libraries (test_http_headers -lcunit )
-
-target_link_libraries (test_http_headers gcov -Wl,--no-as-needed )
-
-
+target_link_libraries (test_webcfgpack gcov -Wl,--no-as-needed )
 
 #-------------------------------------------------------------------------------
-#   test_http
+#   test_multipart
 #-------------------------------------------------------------------------------
-add_test(NAME test_http COMMAND ${MEMORY_CHECK} ./test_http)
-add_executable(test_http test_http.c ../src/http.c ../src/http_headers.c)
-target_link_libraries (test_http -lcunit -lcurl )
+add_test(NAME test_multipart COMMAND ${MEMORY_CHECK} ./test_multipart)
+add_executable(test_multipart test_multipart.c ../src/webcfgdoc.c ../src/webcfgparam.c ../src/multipart.c ../src/helpers.c ../src/array_helpers.c )
+target_link_libraries (test_multipart -lcunit -lmsgpackc -lcurl -luuid)
 
-target_link_libraries (test_http gcov -Wl,--no-as-needed )
-
-#-------------------------------------------------------------------------------
-#   test_portmapping
-#-------------------------------------------------------------------------------
-add_test(NAME test_portmapping COMMAND ${MEMORY_CHECK} ./test_portmapping)
-add_executable(test_portmapping test_portmapping.c ../src/portmapping.c ../src/helpers.c)
-target_link_libraries (test_portmapping -lcunit -lmsgpackc)
-
-target_link_libraries (test_portmapping gcov -Wl,--no-as-needed )
-
-#-------------------------------------------------------------------------------
-#   test_wifi
-#-------------------------------------------------------------------------------
-add_test(NAME test_wifi COMMAND ${MEMORY_CHECK} ./test_wifi)
-add_executable(test_wifi test_wifi.c ../src/wifi.c ../src/helpers.c)
-target_link_libraries (test_wifi -lcunit -lmsgpackc)
-
-target_link_libraries (test_wifi gcov -Wl,--no-as-needed )
-
-#-------------------------------------------------------------------------------
-#   test_xdns
-#-------------------------------------------------------------------------------
-add_test(NAME test_xdns COMMAND ${MEMORY_CHECK} ./test_xdns)
-add_executable(test_xdns test_xdns.c ../src/xdns.c ../src/helpers.c)
-target_link_libraries (test_xdns -lcunit -lmsgpackc)
-
-target_link_libraries (test_xdns gcov -Wl,--no-as-needed )
-
+target_link_libraries (test_multipart gcov -Wl,--no-as-needed )
 
 # Code coverage
 
 add_custom_target(coverage
 COMMAND lcov -q --capture --directory 
-${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_http_headers.dir/__/src --output-file test_http_headers.info
+${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_webcfgpack.dir/__/src --output-file test_webcfgpack.info
 COMMAND lcov -q --capture --directory 
-${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_dhcp.dir/__/src --output-file test_dhcp.info
+${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_webcfgdoc.dir/__/src --output-file test_webcfgdoc.info
 COMMAND lcov -q --capture --directory 
-${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_envelope.dir/__/src --output-file test_envelope.info
-COMMAND lcov -q --capture --directory 
-${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_firewall.dir/__/src --output-file test_firewall.info
-COMMAND lcov -q --capture --directory 
-${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_full.dir/__/src --output-file test_full.info
-COMMAND lcov -q --capture --directory 
-${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_gre.dir/__/src --output-file test_gre.info
-COMMAND lcov -q --capture --directory 
-${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_portmapping.dir/__/src --output-file test_portmapping.info
-COMMAND lcov -q --capture --directory 
-${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_wifi.dir/__/src --output-file test_wifi.info
-COMMAND lcov -q --capture --directory 
-${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_xdns.dir/__/src --output-file test_xdns.info
+${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_webcfgparam.dir/__/src --output-file test_webcfgparam.info
+COMMAND lcov -q --capture --directory
 
 COMMAND lcov
--a test_http_headers.info
--a test_envelope.info
--a test_firewall.info
--a test_full.info
--a test_dhcp.info
--a test_gre.info
--a test_portmapping.info
--a test_wifi.info
--a test_xdns.info
+-a test_webcfgdoc.info
+-a test_webcfgparam.info
+-a test_webcfgpack.info
 --output-file coverage.info
 
 COMMAND genhtml coverage.info

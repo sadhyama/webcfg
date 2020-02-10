@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Comcast Cable Communications Management, LLC
+ * Copyright 2019 Comcast Cable Communications Management, LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef __FIREWALL_H__
-#define __FIREWALL_H__
+#ifndef __WEBCFGPARAM_H__
+#define __WEBCFGPARAM_H__
 
 #include <stdint.h>
 #include <stdlib.h>
 
+typedef struct
+{
+    char *name;
+    char *value;
+    uint16_t type;
+} param_t;
+
 typedef struct {
-    char *level;            /* (O) V 1.0.0 */
-    char **filters;         /* (O) V 1.0.0 */
-    size_t filters_count;
-} firewall_t;
+    param_t *entries;       
+    size_t      entries_count;
+} webcfgparam_t;
 
 /**
- *  This function converts a msgpack buffer into an firewall_t structure
+ *  This function converts a msgpack buffer into an webcfgparam_t structure
  *  if possible.
  *
  *  @param buf the buffer to convert
@@ -34,14 +40,14 @@ typedef struct {
  *
  *  @return NULL on error, success otherwise
  */
-firewall_t* firewall_convert( const void *buf, size_t len );
+webcfgparam_t* webcfgparam_convert( const void *buf, size_t len );
 
 /**
- *  This function destroys an firewall_t object.
+ *  This function destroys an webcfgparam_t object.
  *
- *  @param e the firewall to destroy
+ *  @param e the webcfgparam to destroy
  */
-void firewall_destroy( firewall_t *d );
+void webcfgparam_destroy( webcfgparam_t *d );
 
 /**
  *  This function returns a general reason why the conversion failed.
@@ -50,6 +56,6 @@ void firewall_destroy( firewall_t *d );
  *
  *  @return the constant string (do not alter or free) describing the error
  */
-const char* firewall_strerror( int errnum );
+const char* webcfgparam_strerror( int errnum );
 
 #endif

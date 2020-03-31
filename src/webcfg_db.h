@@ -104,7 +104,6 @@ int get_successDocCount();
 
 void b64_encoder(const void *buf,size_t len, char ** decodeMsg);
 
-int writeBlobToFile(char *blob_file_path, char *data);
 /**
  *  This function converts a msgpack buffer into an webconfig_db_t structure
  *  if possible.

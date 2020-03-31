@@ -699,7 +699,6 @@ void b64_encoder(const void *buf,size_t len, char ** decodeMsg)
 	size = b64_decode( (const uint8_t *)b64buffer, strlen(b64buffer), (uint8_t *)*decodeMsg );
 	WebConfigLog("base64 decoded data containing %ld bytes\n",size);
         
-        writeBlobToFile(WEBCFG_BLOB_PATH, *decodeMsg);
 	WebConfigLog("----End of b64 decoding----\n");
 
 	//End of b64 decoding

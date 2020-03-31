@@ -50,6 +50,7 @@ char* get_global_deviceMAC();
 void initWebConfigMultipartTask();
 void sendNotification(char *payload, char *source, char *destination);
 
+int Get_Webconfig_Blob( char *pString);
 int Get_Webconfig_URL( char **pString);
 int Set_Webconfig_URL( char *pString);
 
@@ -71,6 +72,7 @@ const char* webcfgdbblob_strerror( int errnum );
 int process_webcfgdbblob( blob_struct_t *bd, msgpack_object *obj );
 int process_webcfgdbblobparams( blob_data_t *e, msgpack_object_map *map );
 blob_struct_t* decodeBlobData(const void * buf, size_t len);
+int writeBlobToFile(char *blob_file_path, char *data);
 
 /**
  * @brief setValues interface sets the parameter value.

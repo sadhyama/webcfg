@@ -550,6 +550,7 @@ int processMsgpackSubdoc(multipart_t *mp)
 	if(generateBlob())
         {
 	    blob_data = get_DB_BLOB_base64(&blob_len);
+            writeBlobToFile(WEBCFG_BLOB_PATH, blob_data);
 	    WebConfigLog("The b64 encoded blob is : %s\n",blob_data);
             WebConfigLog("The b64 encoded blob_length is : %zu\n",blob_len);
             readBlobFromFile(WEBCFG_BLOB_PATH);

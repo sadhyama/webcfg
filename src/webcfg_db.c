@@ -111,7 +111,12 @@ WEBCFG_STATUS addNewDocEntry(size_t count)
      WebConfigLog("size of webcfgdbPackSize %ld\n", webcfgdbPackSize);
      WebConfigLog("writeToDBFile %s\n", WEBCFG_DB_FILE);
      writeToDBFile(WEBCFG_DB_FILE,(char *)data);
-  
+     if(data)
+     {
+	WebConfigLog("addNewDocEntry : data free\n");
+	WEBCFG_FREE(data);
+	WebConfigLog("After data free\n");
+     }
      return WEBCFG_SUCCESS;
 }
 
@@ -191,7 +196,9 @@ void webcfgdbblob_destroy( blob_struct_t *bd )
             if( NULL != bd->entries[i].status ) {
                 free( bd->entries[i].status );
             }
-	    
+	    if( NULL != bd->entries[i].error_details ) {
+                free( bd->entries[i].error_details );
+            }
         }
         if( NULL != bd->entries ) {
             free( bd->entries );
@@ -359,7 +366,7 @@ void checkDBList(char *docname, uint32_t version)
 
 	if(updateDBlist(docname, version) != WEBCFG_SUCCESS)
 	{
-		webcfgdb->name = docname;
+		webcfgdb->name = strdup(docname);
 		webcfgdb->version = version;
 		webcfgdb->next = NULL;
 
@@ -401,8 +408,8 @@ WEBCFG_STATUS updateTmpList(char *docname, uint32_t version, char *status, char 
 		if( strcmp(docname, temp->name) == 0)
 		{
 			temp->version = version;
-			temp->status = strdup(status);
-			temp->error_details = strdup(error_details);
+			temp->status = status;
+			temp->error_details = error_details;
 			WebConfigLog("-->>>doc %s is updated to version %lu status %s temp->error_details %s\n", docname, (long)temp->version, temp->status, temp->error_details);
 			return WEBCFG_SUCCESS;
 		}
@@ -624,36 +631,40 @@ char * get_DB_BLOB_base64()
         b64buffer = malloc(encodeSize + 1);
         b64_encode((uint8_t *)db_blob->data, db_blob->len, (uint8_t *)b64buffer);
         b64buffer[encodeSize] = '\0' ;
+	WebConfigLog("---------- End of Base64 encode -------------\n");
 
-	//Start of b64 decoding
+	//Start of b64 decoding for debug purpose
 	WebConfigLog("----Start of b64 decoding----\n");
 	decodeMsgSize = b64_get_decoded_buffer_size(strlen(b64buffer));
 	WebConfigLog("expected b64 decoded msg size : %ld bytes\n",decodeMsgSize);
 
 	decodeMsg = (char *) malloc(sizeof(char) * decodeMsgSize);
-
-	size = b64_decode( (const uint8_t *)b64buffer, strlen(b64buffer), (uint8_t *)decodeMsg );
-
-	WebConfigLog("base64 decoded data containing %zu bytes\n",size);
-
-	blob_struct_t *bd = NULL;
-	bd = ( blob_struct_t * ) malloc( sizeof( blob_struct_t ) );
-	bd = decodeBlobData((void *)decodeMsg, size);
-	WebConfigLog("Size of webcfgdbblob %ld\n", (size_t)bd);
-	if(bd != NULL)
+	if(decodeMsg)
 	{
-		for(k = 0;k< bd->entries_count ; k++)
+		size = b64_decode( (const uint8_t *)b64buffer, strlen(b64buffer), (uint8_t *)decodeMsg );
+
+		WebConfigLog("base64 decoded data containing %zu bytes\n",size);
+
+		blob_struct_t *bd = NULL;
+		bd = decodeBlobData((void *)decodeMsg, size);
+		WebConfigLog("Size of webcfgdbblob %ld\n", (size_t)bd);
+		if(bd != NULL)
 		{
-			WebConfigLog("bd->entries[%zu].name %s\n", k, bd->entries[k].name);
-			WebConfigLog("bd->entries[%zu].version %lu\n" ,k,  (long)bd->entries[k].version);
-			WebConfigLog("bd->entries[%zu].status %s\n", k, bd->entries[k].status);
-			WebConfigLog("bd->entries[%zu].error_details %s\n", k, bd->entries[k].error_details);
+			for(k = 0;k< bd->entries_count ; k++)
+			{
+				WebConfigLog("bd->entries[%zu].name %s\n", k, bd->entries[k].name);
+				WebConfigLog("bd->entries[%zu].version %lu\n" ,k,  (long)bd->entries[k].version);
+				WebConfigLog("bd->entries[%zu].status %s\n", k, bd->entries[k].status);
+				WebConfigLog("bd->entries[%zu].error_details %s\n", k, bd->entries[k].error_details);
+			}
+
 		}
-
+		webcfgdbblob_destroy(bd);
+		WebConfigLog("free decodeMsg\n");
+		WEBCFG_FREE(decodeMsg);
 	}
-	webcfgdbblob_destroy(bd);
 
-        WebConfigLog("---------- End of Base64 Encode -------------\n");
+        WebConfigLog("---------- End of Base64 decode -------------\n");
      }
      else
      {
@@ -691,7 +702,6 @@ int process_webcfgdbblobparams( blob_data_t *e, msgpack_object_map *map )
 			//WebConfigLog("e->version is %lu\n", (long)e->version);
                     }
                     objects_left &= ~(1 << 0);
-		    //WebConfigLog("objects_left after version %d\n", objects_left);
                 }
                 
             }
@@ -702,7 +712,6 @@ int process_webcfgdbblobparams( blob_data_t *e, msgpack_object_map *map )
                     e->name = strndup( p->val.via.str.ptr, p->val.via.str.size );
 		    //WebConfigLog("e->name is %s\n", e->name);
                     objects_left &= ~(1 << 1);
-		    //WebConfigLog("objects_left after name %d\n", objects_left);
                 }
                 else if(0 == match(p, "status") )
                 {
@@ -710,7 +719,7 @@ int process_webcfgdbblobparams( blob_data_t *e, msgpack_object_map *map )
 		     //WebConfigLog("e->status is %s\n", e->status);
                      objects_left &= ~(1 << 2);
                 }
-				else if(0 == match(p, "error_details") )
+		else if(0 == match(p, "error_details") )
                 {
                      e->error_details = strndup( p->val.via.str.ptr, p->val.via.str.size );
 		     //WebConfigLog("e->error_details is %s\n", e->error_details);

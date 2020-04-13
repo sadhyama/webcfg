@@ -70,7 +70,7 @@ void webcfgparam_destroy( webcfgparam_t *pm )
                 free( pm->entries[i].name );
             }
 	    if( NULL != pm->entries[i].value ) {
-              //  free( pm->entries[i].value );
+                free( pm->entries[i].value );
             }
         }
         if( NULL != pm->entries ) {

@@ -59,7 +59,7 @@ size_t writer_callback_fn(void *buffer, size_t size, size_t nmemb, struct token_
 size_t headr_callback(char *buffer, size_t size, size_t nitems);
 void stripspaces(char *str, char **final_str);
 void createCurlHeader( struct curl_slist *list, struct curl_slist **header_list, int status, char ** trans_uuid);
-void parse_multipart(char *ptr, int no_of_bytes, multipartdocs_t *m, int *no_of_subdocbytes);
+void parse_multipart(char *ptr, int no_of_bytes, multipartdocs_t *m);
 void multipart_destroy( multipart_t *m );
 void addToDBList(webconfig_db_data_t *webcfgdb);
 char* generate_trans_uuid();
@@ -68,6 +68,7 @@ void loadInitURLFromFile(char **url);
 static void get_webCfg_interface(char **interface);
 void get_root_version(uint32_t *rt_version);
 char *replaceMacWord(const char *s, const char *macW, const char *deviceMACW);
+void reqParam_destroy( int paramCnt, param_t *reqObj );
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
@@ -82,7 +83,7 @@ char *replaceMacWord(const char *s, const char *macW, const char *deviceMACW);
 * @param[out] contentType config data contentType 
 * @return returns 0 if success, otherwise failed to fetch auth token and will be retried.
 */
-WEBCFG_STATUS webcfg_http_request(char **configData, int r_count, int status, long *code, char **transaction_id, char** contentType, size_t *dataSize)
+WEBCFG_STATUS webcfg_http_request(char **configData, int r_count, int status, long *code, char **transaction_id, char* contentType, size_t *dataSize)
 {
 	CURL *curl;
 	CURLcode res;
@@ -246,7 +247,7 @@ WEBCFG_STATUS webcfg_http_request(char **configData, int r_count, int status, lo
 					else
 					{
 						WebConfigLog("Content-Type is valid\n");
-						*contentType = strdup(ct);
+						strcpy(contentType, ct);
 
 						*configData=data.data;
 						*dataSize = data.size;
@@ -274,7 +275,6 @@ WEBCFG_STATUS parseMultipartDocument(void *config_data, char *ct , size_t data_s
 	char *last_line_boundary = NULL;
 	char *str_body = NULL;
 	multipart_t *mp = NULL;
-	int subdocbytes =0;
 	int boundary_len =0;
 	int count =0;
 	int status =0;
@@ -302,6 +302,9 @@ WEBCFG_STATUS parseMultipartDocument(void *config_data, char *ct , size_t data_s
 	// Use --boundary to split
 	str_body = malloc(sizeof(char) * data_size + 1);
 	str_body = memcpy(str_body, config_data, data_size + 1);
+	WebConfigLog( "free config_data\n");
+	WEBCFG_FREE(config_data);
+	WebConfigLog( "After free config_data\n");
 	int num_of_parts = 0;
 	char *ptr_lb=str_body;
 	char *ptr_lb1=str_body;
@@ -353,7 +356,7 @@ WEBCFG_STATUS parseMultipartDocument(void *config_data, char *ct , size_t data_s
 				}
 				index2 = ptr_lb1-str_body;
 				index1 = ptr_lb-str_body;
-				parse_multipart(str_body+index1+1,index2 - index1 - 2, &mp->entries[count],&subdocbytes);
+				parse_multipart(str_body+index1+1,index2 - index1 - 2, &mp->entries[count]);
 				ptr_lb++;
 
 				if(0 == memcmp(ptr_lb, last_line_boundary, strlen(last_line_boundary)))
@@ -374,6 +377,14 @@ WEBCFG_STATUS parseMultipartDocument(void *config_data, char *ct , size_t data_s
 			ptr_lb++;
 		}
 	}
+
+	WebConfigLog( "free str_body\n");
+	WEBCFG_FREE(str_body);
+	WebConfigLog( "After free str_body\n");
+	WEBCFG_FREE(line_boundary);
+	WebConfigLog( "After free line_boundary\n");
+	WEBCFG_FREE(last_line_boundary);
+	WebConfigLog( "After free last_line_boundary\n");
 	status = processMsgpackSubdoc(mp, trans_uuid);
 	if(status ==0)
 	{
@@ -503,7 +514,13 @@ WEBCFG_STATUS processMsgpackSubdoc(multipart_t *mp, char *transaction_id)
 						webcfgdb = (webconfig_db_data_t *) malloc (sizeof(webconfig_db_data_t));
 
 						webcfgdb->name = strdup("root");
-						webcfgdb->version = strtoul(temp,NULL,0);
+						if(temp)
+						{
+							webcfgdb->version = strtoul(temp,NULL,0);
+							WebConfigLog("db q: free temp\n");
+							WEBCFG_FREE(temp);
+							WebConfigLog("db q: after temp free\n");
+						}
 						webcfgdb->next = NULL;
 						addToDBList(webcfgdb);
                         			success_count++;
@@ -553,7 +570,12 @@ WEBCFG_STATUS processMsgpackSubdoc(multipart_t *mp, char *transaction_id)
 					}
 					print_tmp_doc_list(mp->entries_count);
 				}
-                         //WEBCFG_FREE(reqParam);
+				if(NULL != reqParam)
+				{
+					WebConfigLog("reqParam_destroy\n");
+					reqParam_destroy(paramCount, reqParam);
+					WebConfigLog("After reqParam_destroy\n");
+				}
 			}
 			webcfgparam_destroy( pm );
 		}
@@ -562,6 +584,9 @@ WEBCFG_STATUS processMsgpackSubdoc(multipart_t *mp, char *transaction_id)
 			WebConfigLog("--------------decode root doc failed-------------\n");	
 		}
 	}
+	WebConfigLog("multipart_destroy\n");
+	multipart_destroy(mp);
+	WebConfigLog("After multipart_destroy\n");
         
 	if(success_count) //No DB update when all docs failed.
 	{
@@ -583,15 +608,23 @@ WEBCFG_STATUS processMsgpackSubdoc(multipart_t *mp, char *transaction_id)
 
 	WebConfigLog("Proceed to generateBlob\n");
 	if(generateBlob() == WEBCFG_SUCCESS)
-    {
-	    blob_data = get_DB_BLOB_base64(&blob_len);
-	    WebConfigLog("The b64 encoded blob is : %s\n",blob_data);
-        WebConfigLog("The b64 encoded blob_length is : %zu\n",strlen(blob_data));
-    }
-    else
-    {
-        WebConfigLog("Failed in Blob generation\n");
-    }
+	{
+		blob_data = get_DB_BLOB_base64(&blob_len);
+		if(blob_data !=NULL)
+		{
+			WebConfigLog("The b64 encoded blob is : %s\n",blob_data);
+			WebConfigLog("The b64 encoded blob_length is : %zu\n",strlen(blob_data));
+			WEBCFG_FREE(blob_data);
+		}
+		else
+		{
+			WebConfigLog("Failed in blob base64 encode\n");
+		}
+	}
+	else
+	{
+		WebConfigLog("Failed in Blob generation\n");
+	}
 
 	return rv;
 }
@@ -667,10 +700,15 @@ size_t headr_callback(char *buffer, size_t size, size_t nitems)
 uint32_t get_global_root()
 {
 	char * temp = NULL;
-	uint32_t g_version;
+	uint32_t g_version = 0;
 
 	temp = strdup(g_ETAG);
-	g_version = strtoul(temp,NULL,0);
+	if(temp)
+	{
+		g_version = strtoul(temp,NULL,0);
+		WebConfigLog("get_global_root. temp free\n");
+		WEBCFG_FREE(temp);
+	}
 	WebConfigLog("g_version is %lu\n", (long)g_version);
 	return g_version;
 }
@@ -1158,29 +1196,26 @@ char* generate_trans_uuid()
 	return transID;
 }
 
-//TODO:
 void multipart_destroy( multipart_t *m )
 {
     if( NULL != m ) {
-     /*   size_t i;
-        for( i = 0; i < m->entries_count; i++ ) {
-            if( NULL != m->entries[i].name_space ) {
-                printf("name_space %ld",i);
+        size_t i=0;
+	WebConfigLog("m->entries_count %ld\n", m->entries_count-1);
+        for( i = 0; i < m->entries_count-1; i++ ) {
+           if( NULL != m->entries[i].name_space ) {
+                WebConfigLog("m->entries[%ld].name_space %s\n",i, m->entries[i].name_space);
                 free( m->entries[i].name_space );
             }
-	    if( NULL != m->entries[i].etag ) {
-                printf("etag %ld",i);
-                free( m->entries[i].etag );
-            }
              if( NULL != m->entries[i].data ) {
-                printf("data %ld",i);
+                WebConfigLog("m->entries[%ld].data %s\n",i, m->entries[i].data);
                 free( m->entries[i].data );
+		WebConfigLog("after data free\n");
             }
         }
         if( NULL != m->entries ) {
-            printf("entries %ld",i);
+            WebConfigLog("entries %ld\n",i);
             free( m->entries );
-        }*/
+        }
         free( m );
     }
 }
@@ -1208,10 +1243,8 @@ int writeToFile(char *filename, char *data, int len)
 	}
 }
 
-void parse_multipart(char *ptr, int no_of_bytes, multipartdocs_t *m, int *no_of_subdocbytes)
+void parse_multipart(char *ptr, int no_of_bytes, multipartdocs_t *m)
 {
-	void * mulsubdoc;
-
 	/*for storing respective values */
 	if(0 == strncasecmp(ptr,"Namespace",strlen("Namespace")-1))
 	{
@@ -1220,15 +1253,19 @@ void parse_multipart(char *ptr, int no_of_bytes, multipartdocs_t *m, int *no_of_
 	else if(0 == strncasecmp(ptr,"Etag",strlen("Etag")-1))
 	{
                 char * temp = strndup(ptr+(strlen("Etag: ")),no_of_bytes-((strlen("Etag: "))));
-                m->etag = strtoul(temp,0,0);
-		WebConfigLog("The Etag version is %lu\n",(long)m->etag);
+		if(temp)
+		{
+		        m->etag = strtoul(temp,0,0);
+			WebConfigLog("The Etag version is %lu\n",(long)m->etag);
+			WEBCFG_FREE(temp);
+			WebConfigLog("After temp free\n");
+		}
 	}
 	else if(strstr(ptr,"parameters"))
 	{
-		m->data = ptr;
-		mulsubdoc = (void *) ptr;
-		webcfgparam_convert( mulsubdoc, no_of_bytes );
-		*no_of_subdocbytes = no_of_bytes;
+		m->data = malloc(sizeof(char) * no_of_bytes );
+		m->data = memcpy(m->data, ptr, no_of_bytes );
+		WebConfigLog("no_of_bytes %d\n",no_of_bytes);
 		//store doc size of each sub doc
 		m->data_size = no_of_bytes;
 	}
@@ -1290,5 +1327,23 @@ char *replaceMacWord(const char *s, const char *macW, const char *deviceMACW)
 		result[i] = '\0';
 	}
 	return result;
+}
+
+void reqParam_destroy( int paramCnt, param_t *reqObj )
+{
+	int i = 0;
+	WebConfigLog("paramCnt %d\n", paramCnt);
+	if(reqObj)
+	{
+		for (i = 0; i < paramCnt; i++)
+		{
+			WebConfigLog(">>>reqObj[%d].name %s reqObj[%d].value %s\n", i, reqObj[i].name, i, reqObj[i].value);
+			free(reqObj[i].name);
+			free(reqObj[i].value);
+		}
+		WebConfigLog("free reqObj\n");
+		free(reqObj);
+	}
+	WebConfigLog("End of reqParam_destroy\n");
 }
 

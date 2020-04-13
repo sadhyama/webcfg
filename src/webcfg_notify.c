@@ -78,6 +78,7 @@ void addWebConfgNotifyMsg(char *docname, uint32_t version, char *status, char *e
 
 	if(args)
 	{
+		memset(args, 0, sizeof(notify_params_t));
 		if(docname != NULL)
 		{
 			args->name = strdup(docname);
@@ -139,6 +140,7 @@ void addWebConfgNotifyMsg(char *docname, uint32_t version, char *status, char *e
 //Notify thread function waiting for notify msgs
 void* processWebConfgNotification()
 {
+	pthread_detach(pthread_self());
 	char device_id[32] = { '\0' };
 	cJSON *notifyPayload = NULL;
 	char  * stringifiedNotifyPayload = NULL;
@@ -196,6 +198,7 @@ void* processWebConfgNotification()
 					strncpy(source, device_id, sizeof(device_id));
 					WebConfigLog("source is %s\n", source);
 					WebConfigLog("stringifiedNotifyPayload is %s\n", stringifiedNotifyPayload);
+					//stringifiedNotifyPayload, source to be freed by sendNotification
 					sendNotification(stringifiedNotifyPayload, source, dest);
 				}
 				if(msg != NULL)

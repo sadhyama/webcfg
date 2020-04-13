@@ -199,7 +199,7 @@ void processWebconfgSync(int status)
 	long res_code;
 	int rv=0;
 	char *transaction_uuid =NULL;
-	char *ct=NULL;
+	char ct[256] = {0};
 	size_t dataSize=0;
 
 	WebConfigLog("========= Start of processWebconfgSync =============\n");
@@ -212,7 +212,8 @@ void processWebconfgSync(int status)
 			break;
 		}
 		WebConfigLog("processWebconfgSync. status is %d\n", status );
-		configRet = webcfg_http_request(&webConfigData, r_count, status, &res_code, &transaction_uuid, &ct, &dataSize);
+		configRet = webcfg_http_request(&webConfigData, r_count, status, &res_code, &transaction_uuid, ct, &dataSize);
+		WebConfigLog("After webcfg_http_request ct %s\n", ct);
 		if(configRet == 0)
 		{
 			rv = handlehttpResponse(res_code, webConfigData, retry_count, transaction_uuid, ct, dataSize);

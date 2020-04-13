@@ -45,7 +45,7 @@ pthread_mutex_t *get_global_sync_mutex(void);
 
 void initWebConfigMultipartTask(unsigned long status);
 void processWebconfgSync(int Status);
-WEBCFG_STATUS webcfg_http_request(char **configData, int r_count, int status, long *code, char **transaction_id,char** contentType, size_t* dataSize);
+WEBCFG_STATUS webcfg_http_request(char **configData, int r_count, int status, long *code, char **transaction_id,char* contentType, size_t* dataSize);
 
 void webcfgStrncpy(char *destStr, const char *srcStr, size_t destSize);
 

@@ -242,11 +242,11 @@ WEBCFG_STATUS webcfg_http_request(char **configData, int r_count, int status, lo
 				{
 					if(strncmp(ct, "multipart/mixed", 15) !=0)
 					{
-						WebConfigLog("Invalid Content-Type\n");
+						WebConfigLog("Content-Type is not multipart/mixed. Invalid\n");
 					}
 					else
 					{
-						WebConfigLog("Content-Type is valid\n");
+						WebConfigLog("Content-Type is multipart/mixed. Valid\n");
 						strcpy(contentType, ct);
 
 						*configData=data.data;
@@ -256,7 +256,6 @@ WEBCFG_STATUS webcfg_http_request(char **configData, int r_count, int status, lo
 				}
 			}
 		}
-		//WEBCFG_FREE(data.data);
 		curl_easy_cleanup(curl);
 		return WEBCFG_SUCCESS;
 	}
@@ -584,6 +583,8 @@ WEBCFG_STATUS processMsgpackSubdoc(multipart_t *mp, char *transaction_id)
 			WebConfigLog("--------------decode root doc failed-------------\n");	
 		}
 	}
+	WebConfigLog("free trans_id after all docs processing\n");
+	WEBCFG_FREE(trans_id);
 	WebConfigLog("multipart_destroy\n");
 	multipart_destroy(mp);
 	WebConfigLog("After multipart_destroy\n");
@@ -1218,29 +1219,6 @@ void multipart_destroy( multipart_t *m )
         }
         free( m );
     }
-}
-
-
-int writeToFile(char *filename, char *data, int len)
-{
-	FILE *fp;
-	fp = fopen(filename , "w+");
-	if (fp == NULL)
-	{
-		WebConfigLog("Failed to open file %s\n", filename );
-		return 0;
-	}
-	if(data !=NULL)
-	{
-		fwrite(data, len, 1, fp);
-		fclose(fp);
-		return 1;
-	}
-	else
-	{
-		WebConfigLog("WriteToFile failed, Data is NULL\n");
-		return 0;
-	}
 }
 
 void parse_multipart(char *ptr, int no_of_bytes, multipartdocs_t *m)

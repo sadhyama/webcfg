@@ -95,6 +95,7 @@ WEBCFG_STATUS initDB(char * db_file_path )
      fclose(fp);
 
      decodeData((void *)data, len);
+     WEBCFG_FREE(data);
      generateBlob();
      return WEBCFG_SUCCESS;
      
@@ -162,6 +163,7 @@ int writeToDBFile(char *db_file_path, char *data)
 	else
 	{
 		WebConfigLog("WriteToJson failed, Data is NULL\n");
+		fclose(fp);
 		return 0;
 	}
 }
@@ -408,8 +410,22 @@ WEBCFG_STATUS updateTmpList(char *docname, uint32_t version, char *status, char 
 		if( strcmp(docname, temp->name) == 0)
 		{
 			temp->version = version;
-			temp->status = status;
-			temp->error_details = error_details;
+			if(strcmp(temp->status, status) !=0)
+			{
+				WebConfigLog("free temp->status\n");
+				WEBCFG_FREE(temp->status);
+				temp->status = NULL;
+				WebConfigLog("status update\n");
+				temp->status = strdup(status);
+			}
+			if(strcmp(temp->error_details, error_details) !=0)
+			{
+				WebConfigLog("free temp->error_details\n");
+				WEBCFG_FREE(temp->error_details);
+				temp->error_details = NULL;
+				WebConfigLog("error_details update\n");
+				temp->error_details = strdup(error_details);
+			}
 			WebConfigLog("-->>>doc %s is updated to version %lu status %s temp->error_details %s\n", docname, (long)temp->version, temp->status, temp->error_details);
 			return WEBCFG_SUCCESS;
 		}
@@ -451,8 +467,15 @@ WEBCFG_STATUS deleteFromTmpList(char* doc_name)
 				prev_node->next = curr_node->next;
 			}
 
-			WebConfigLog("Deleting the node\n");
-			free( curr_node );
+			WebConfigLog("Deleting the node entries\n");
+			WebConfigLog("free curr_node->name %s curr_node->status %s curr_node->error_details %s\n", curr_node->name, curr_node->status, curr_node->error_details);
+			WEBCFG_FREE( curr_node->name );
+			WebConfigLog("free curr_node->status %s\n", curr_node->status);
+			WEBCFG_FREE( curr_node->status );
+			WebConfigLog("free curr_node->error_details %s\n", curr_node->error_details);
+			WEBCFG_FREE( curr_node->error_details );
+			WebConfigLog("free curr_node\n");
+			WEBCFG_FREE( curr_node );
 			curr_node = NULL;
 			WebConfigLog("Deleted successfully and returning..\n");
 			numOfMpDocs =numOfMpDocs - 1;
@@ -571,6 +594,7 @@ int process_webcfgdb( webconfig_db_data_t *wd, msgpack_object *obj )
             if( MSGPACK_OBJECT_MAP != array->ptr[i].type )
             {
                 errno = WD_INVALID_WD_OBJECT;
+		WEBCFG_FREE(wd);
                 return -1;
             }
             if( 0 != process_webcfgdbparams(wd, &array->ptr[i].via.map) )

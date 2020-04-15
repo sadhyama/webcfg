@@ -34,11 +34,12 @@
 
 char *url = NULL;
 char *interface = NULL;
+char device_mac[32] = {'\0'};
 
 char* get_deviceMAC()
 {
-	char *tmp = strdup("b42xxxxxxxxx");
-	return tmp;
+	strcpy(device_mac, "b42xxxxxxxxx");
+	return device_mac;
 }
 void setValues(const param_t paramVal[], const unsigned int paramCount, const int setType, char *transactionId, money_trace_spans *timeSpan, WDMP_STATUS *retStatus, int *ccspStatus)
 {
@@ -104,9 +105,9 @@ char * getFirmwareVersion()
 
 void sendNotification(char *payload, char *source, char *destination)
 {
-	UNUSED(payload);
-	UNUSED(source);
 	UNUSED(destination);
+	WEBCFG_FREE(payload);
+	WEBCFG_FREE(source);
 	return;
 }
 

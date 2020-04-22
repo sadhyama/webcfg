@@ -819,76 +819,17 @@ int process_webcfgdbblob( blob_struct_t *bd, msgpack_object *obj )
 
     return 0;
 }
-
-int writebase64ToDBFile(char *base64_file_path, char *data)
+char * base64blobencoder(char * blob_data, size_t blob_size )
 {
-	FILE *fp;
-	fp = fopen(base64_file_path , "w+");
-	if (fp == NULL)
-	{
-		WebcfgError("Failed to open base64_file in db %s\n", base64_file_path);
-		return 0;
-	}
-	if(data !=NULL)
-	{
-		fwrite(data, strlen(data), 1, fp);
-		fclose(fp);
-		return 1;
-	}
-	else
-	{
-		WebcfgError("WriteToJson failed, Data is NULL\n");
-		fclose(fp);
-		return 0;
-	}
-}
-char * base64blobdecoder(char *base64_file_path)
-{
-	FILE *fp;
-	size_t sz;
-	char *data;
-	size_t len;
-	int ch_count=0;
 	char* b64buffer =  NULL;
-	//size_t k ;
 	size_t encodeSize = -1;
-	//size_t size =0;
-	//size_t decodeMsgSize =0;
-
-     	WebcfgDebug("DB file path is %s\n", base64_file_path);
-     	fp = fopen(base64_file_path,"rb");
-
-     	if (fp == NULL)
-     	{
-		WebcfgError("Failed to open file %s\n", base64_file_path);
-		return 0;
-     	}
-     
-     	fseek(fp, 0, SEEK_END);
-     	ch_count = ftell(fp);
-     	if (ch_count == (int)-1)
-    	{
-        	WebcfgError("fread failed.\n");
-		fclose(fp);
-        	return 0;
-    	}
-     	fseek(fp, 0, SEEK_SET);
-     	data = (char *) malloc(sizeof(char) * (ch_count + 1));
-     	sz = fread(data, 1, ch_count,fp);
-     	if (sz == (size_t)-1) 
-	{	
-		fclose(fp);
-		WebcfgError("fread failed.\n");
-		WEBCFG_FREE(data);
-		return 0;
-	}
-    	len = ch_count;
-     	fclose(fp);
+   	WebcfgDebug("Data is %s\n", blob_data);
+     	
 	WebcfgDebug("-----------Start of Base64 Encode ------------\n");
-        encodeSize = b64_get_encoded_buffer_size( len);
+        encodeSize = b64_get_encoded_buffer_size(blob_size);
         WebcfgDebug("encodeSize is %zu\n", encodeSize);
         b64buffer = malloc(encodeSize + 1);
-        b64_encode((uint8_t *)data, len, (uint8_t *)b64buffer);
+       	b64_encode((uint8_t *)blob_data, blob_size, (uint8_t *)b64buffer); 
         b64buffer[encodeSize] = '\0' ;
 	return b64buffer;
 }

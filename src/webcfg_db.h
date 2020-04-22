@@ -121,7 +121,7 @@ WEBCFG_STATUS updateDBlist(char *docname, uint32_t version);
 
 int writebase64ToDBFile(char *base64_file_path, char *data);
 
-char * base64blobdecoder(char *base64_file_path );
+char * base64blobencoder(char * blob_data, size_t blob_size );
 
 /**
  *  This function converts a msgpack buffer into an webconfig_db_t structure

@@ -33,7 +33,6 @@
 #define WEBPA_READ_HEADER          "/etc/parodus/parodus_read_file.sh"
 #define WEBPA_CREATE_HEADER        "/etc/parodus/parodus_create_file.sh"
 #define CCSP_CRASH_STATUS_CODE      192
-
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
 /*----------------------------------------------------------------------------*/
@@ -465,15 +464,21 @@ WEBCFG_STATUS processMsgpackSubdoc(multipart_t *mp, char *transaction_id)
 			{
                                 if(pm->entries[i].value != NULL)
                                 {
-				if(0 == strncasecmp(mp->entries[m].name_space,"privatessid",strlen("privatessid")))
+				 if(pm->entries[i].type == WDMP_BLOB)
 				{
-					char *temp_blob = NULL;
+					char *temp_blob = NULL;					
 					
-					writebase64ToDBFile(WEBCFG_BASE64DB_FILE, pm->entries[i].value);			
-					temp_blob = base64blobdecoder(WEBCFG_BASE64DB_FILE);
+					temp_blob = base64blobencoder(pm->entries[i].value, pm->entries[i].value_size);
 					reqParam[i].name = strdup(pm->entries[i].name);
 				    	reqParam[i].value = strdup(temp_blob);
 				    	reqParam[i].type = pm->entries[i].type;
+					if(0 == strncasecmp(mp->entries[m].name_space,"portforwarding",strlen("portforwarding")))
+			{
+				WebcfgInfo("Updating X_RDK_PortMapping paramName\n");
+				reqParam[i].name = strdup("Device.NAT.X_RDK_PortMapping.Data");
+				WebcfgInfo("Updating DataType WDMP_BASE64\n");
+				reqParam[i].type = WDMP_BASE64;
+			}
 				}
 				else
 				{

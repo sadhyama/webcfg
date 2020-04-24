@@ -831,7 +831,6 @@ char * base64blobencoder(char * blob_data, size_t blob_size )
        	b64_encode((uint8_t *)blob_data, blob_size, (uint8_t *)b64buffer); 
         b64buffer[encodeSize] = '\0' ;
 	WebcfgInfo("b64buffer is %s\n", b64buffer);
-	writebase64ToDBFile(WEBCFG_BASE64DB_FILE, b64buffer);
 	return b64buffer;
 }
 

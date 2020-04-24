@@ -465,7 +465,7 @@ WEBCFG_STATUS processMsgpackSubdoc(multipart_t *mp, char *transaction_id)
 			{
                                 if(pm->entries[i].value != NULL)
                                 {
-					if(pm->entries[i].type == WDMP_BLOB)
+					if(pm->entries[i].type == 12)
 					{
 						char *temp_blob = NULL;
 

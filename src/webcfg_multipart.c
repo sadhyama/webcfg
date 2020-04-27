@@ -33,6 +33,7 @@
 #define WEBPA_READ_HEADER          "/etc/parodus/parodus_read_file.sh"
 #define WEBPA_CREATE_HEADER        "/etc/parodus/parodus_create_file.sh"
 #define CCSP_CRASH_STATUS_CODE      192
+#define ATOMIC_SET_XPC			2
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
 /*----------------------------------------------------------------------------*/
@@ -496,7 +497,7 @@ WEBCFG_STATUS processMsgpackSubdoc(multipart_t *mp, char *transaction_id)
 			if(reqParam !=NULL)
 			{
 				WebcfgInfo("WebConfig SET Request\n");
-				setValues(reqParam, paramCount, 0, NULL, NULL, &ret, &ccspStatus);
+				setValues(reqParam, paramCount, ATOMIC_SET_XPC, NULL, NULL, &ret, &ccspStatus);
 				if(ret == WDMP_SUCCESS)
 				{
 					WebcfgInfo("setValues success. ccspStatus : %d\n", ccspStatus);

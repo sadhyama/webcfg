@@ -487,7 +487,7 @@ WEBCFG_STATUS processMsgpackSubdoc(multipart_t *mp, char *transaction_id)
 				    reqParam[i].value = strdup(pm->entries[i].value);
 				    reqParam[i].type = pm->entries[i].type;
 				}
-                                }
+        }
 				WebcfgInfo("Request:> param[%d].name = %s\n",i,reqParam[i].name);
 				WebcfgDebug("Request:> param[%d].value = %s\n",i,reqParam[i].value);
 				WebcfgDebug("Request:> param[%d].type = %d\n",i,reqParam[i].type);

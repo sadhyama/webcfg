@@ -145,14 +145,16 @@ int process_params( wparam_t *e, msgpack_object_map *map )
                     objects_left &= ~(1 << 1);
                 }
 		if( 0 == match(p, "value") ) {
-                    e->value = strndup( p->val.via.str.ptr, p->val.via.str.size );
-		    e->value_size =strlen(e->value);
-		    if((uint32_t)e->value_size != (uint32_t)p->val.via.str.size)
-		    {
 			WebcfgInfo("blob size update\n");
-		    e->value = (char*)p->val.via.str.ptr;
+			e->value = malloc(sizeof(char) * p->val.via.str.size );
+			memset( e->value, 0, sizeof(char) * p->val.via.str.size);
+			e->value = memcpy(e->value, p->val.via.str.ptr, p->val.via.str.size );
+			e->value[p->val.via.str.size] = '\0';
+			WebcfgInfo("e->value dest size\n");
+
 		    e->value_size =(uint32_t) p->val.via.str.size;
-		    }
+			WebcfgInfo("e->value is %s\n", e->value);
+			WebcfgInfo("e->value_size %lu\n", (long)e->value_size);
                     objects_left &= ~(1 << 2);
                 }
 	

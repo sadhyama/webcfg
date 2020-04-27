@@ -823,6 +823,7 @@ char * base64blobencoder(char * blob_data, size_t blob_size )
 {
 	char* b64buffer =  NULL;
 	size_t encodeSize = -1;
+
    	WebcfgInfo("Data is %s\n", blob_data);
      	WebcfgInfo("-----------Start of Base64 Encode ------------\n");
         encodeSize = b64_get_encoded_buffer_size(blob_size);
@@ -833,4 +834,3 @@ char * base64blobencoder(char * blob_data, size_t blob_size )
 	WebcfgInfo("b64buffer is %s\n", b64buffer);
 	return b64buffer;
 }
-

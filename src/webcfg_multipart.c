@@ -465,21 +465,29 @@ WEBCFG_STATUS processMsgpackSubdoc(multipart_t *mp, char *transaction_id)
 			{
                                 if(pm->entries[i].value != NULL)
                                 {
-				 if(pm->entries[i].type == WDMP_BLOB)
-				{
-					char *temp_blob = NULL;					
-					
-					temp_blob = base64blobencoder(pm->entries[i].value, pm->entries[i].value_size);
-					reqParam[i].name = strdup(pm->entries[i].name);
-				    	reqParam[i].value = strdup(temp_blob);
-				    	reqParam[i].type = pm->entries[i].type;
-				}
-				else
-				{
-				    reqParam[i].name = strdup(pm->entries[i].name);
-				    reqParam[i].value = strdup(pm->entries[i].value);
-				    reqParam[i].type = pm->entries[i].type;
-				}
+					if(pm->entries[i].type == WDMP_BLOB)
+					{
+						char *temp_blob = NULL;
+						WebcfgInfo("B4 base64blobencoder\n");
+						temp_blob = base64blobencoder(pm->entries[i].value, pm->entries[i].value_size);
+						WebcfgInfo("after base64blobencoder\n");
+						reqParam[i].name = strdup(pm->entries[i].name);
+						if(temp_blob)
+						{
+							WebcfgInfo("temp_blob assign\n");
+							reqParam[i].value = strdup(temp_blob);
+							//WEBCFG_FREE(temp_blob);
+						}
+						WebcfgInfo("Updating blob DataType WDMP_BASE64\n");
+						reqParam[i].type = WDMP_BASE64;
+					}
+					else
+					{
+						WebcfgInfo("reqParam for scalars\n");
+						reqParam[i].name = strdup(pm->entries[i].name);
+						reqParam[i].value = strdup(pm->entries[i].value);
+						reqParam[i].type = pm->entries[i].type;
+					}
                                 }
 				WebcfgInfo("Request:> param[%d].name = %s\n",i,reqParam[i].name);
 				WebcfgDebug("Request:> param[%d].value = %s\n",i,reqParam[i].value);
@@ -591,9 +599,11 @@ WEBCFG_STATUS processMsgpackSubdoc(multipart_t *mp, char *transaction_id)
 				if(NULL != reqParam)
 				{
 					reqParam_destroy(paramCount, reqParam);
+					WebcfgInfo("After reqParam destroy\n");
 				}
 			}
 			webcfgparam_destroy( pm );
+			WebcfgInfo("After webcfgparam_destroy destroy\n");
 		}
 		else
 		{
@@ -1329,12 +1339,25 @@ void reqParam_destroy( int paramCnt, param_t *reqObj )
 	int i = 0;
 	if(reqObj)
 	{
+		WebcfgInfo("reqParam_destroy\n");
 		for (i = 0; i < paramCnt; i++)
 		{
-			free(reqObj[i].name);
-			free(reqObj[i].value);
+			WebcfgInfo("free reqObj name\n");
+			if(reqObj[i].name)
+			{
+				free(reqObj[i].name);
+				WebcfgInfo("After free reqObj name\n");
+			}
+			WebcfgInfo("free reqObj value\n");
+			if(reqObj[i].value)
+			{
+				free(reqObj[i].value);
+				WebcfgInfo("After free reqObj value\n");
+			}
 		}
+		WebcfgInfo("free reqObj\n");
 		free(reqObj);
 	}
+	WebcfgInfo("reqParam_destroy end\n");
 }
 

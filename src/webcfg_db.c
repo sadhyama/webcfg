@@ -823,14 +823,23 @@ char * base64blobencoder(char * blob_data, size_t blob_size )
 {
 	char* b64buffer =  NULL;
 	size_t encodeSize = -1;
-   	WebcfgDebug("Data is %s\n", blob_data);
+	WebcfgInfo("Data is %s\n", blob_data);
      	
-	WebcfgDebug("-----------Start of Base64 Encode ------------\n");
+	WebcfgInfo("-----------Start of Base64 Encode ------------\n");
         encodeSize = b64_get_encoded_buffer_size(blob_size);
-        WebcfgDebug("encodeSize is %zu\n", encodeSize);
+        WebcfgInfo("encodeSize is %zu\n", encodeSize);
         b64buffer = malloc(encodeSize + 1);
-       	b64_encode((uint8_t *)blob_data, blob_size, (uint8_t *)b64buffer); 
-        b64buffer[encodeSize] = '\0' ;
+	if(b64buffer)
+	{
+		memset(b64buffer, 0, encodeSize + 1);
+		b64_encode((uint8_t *)blob_data, blob_size, (uint8_t *)b64buffer);
+		b64buffer[encodeSize] = '\0' ;
+	}
+	else
+	{
+		WebcfgError("Failed in b64buffer allocation\n");
+	}
+	WebcfgInfo("b64buffer is %s\n", b64buffer);
 	return b64buffer;
 }
 

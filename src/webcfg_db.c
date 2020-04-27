@@ -834,26 +834,3 @@ char * base64blobencoder(char * blob_data, size_t blob_size )
 	WebcfgInfo("b64buffer is %s\n", b64buffer);
 	return b64buffer;
 }
-
-int writebase64ToDBFile(char *base64_file_path, char *data)
-{
-	FILE *fp;
-	fp = fopen(base64_file_path , "w+");
-	if (fp == NULL)
-	{
-		WebcfgError("Failed to open base64_file in db %s\n", base64_file_path);
-		return 0;
-	}
-	if(data !=NULL)
-	{
-		fwrite(data, strlen(data), 1, fp);
-		fclose(fp);
-		return 1;
-	}
-	else
-	{
-		WebcfgError("WriteToJson failed, Data is NULL\n");
-		fclose(fp);
-		return 0;
-	}
-}

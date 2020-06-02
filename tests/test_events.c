@@ -149,13 +149,13 @@ void test_eventACK()
 	tmpData->status = strdup("ACK");
 	tmpData->trans_id = 14464;
 	tmpData->retry_count = 0;
+	tmpData->error_code = 0;
 	tmpData->error_details = strdup("success");
 	tmpData->next = NULL;
 	set_global_tmp_node(tmpData);
 	numLoops = 2;
 	initWebConfigNotifyTask();
 	processWebcfgEvents();
-	initEventHandlingTask();
 	webcfgCallback("privatessid,14464,410448631,ACK,0", NULL);
 	sleep(1);
 }
@@ -168,6 +168,7 @@ void test_invalidVersionACK()
 	tmpData->status = strdup("ACK");
 	tmpData->trans_id = 14464;
 	tmpData->retry_count = 0;
+	tmpData->error_code = 0;
 	tmpData->error_details = strdup("success");
 	tmpData->next = NULL;
 	set_global_tmp_node(tmpData);
@@ -196,13 +197,13 @@ void test_eventTimeout()
 	tmpData->status = strdup("ACK");
 	tmpData->trans_id = 14464;
 	tmpData->retry_count = 0;
+	tmpData->error_code = 0;
 	tmpData->error_details = strdup("success");
 	tmpData->next = NULL;
 	set_global_tmp_node(tmpData);
 	numLoops = 2;
 	initWebConfigNotifyTask();
 	processWebcfgEvents();
-	initEventHandlingTask();
 	webcfgCallback("homessid,14464,410448631,ACK,60", NULL);
 	sleep(1);
 	if(tmpData)
@@ -222,6 +223,7 @@ void test_invalidVersionTimeout()
 	tmpData->status = strdup("ACK");
 	tmpData->trans_id = 14464;
 	tmpData->retry_count = 0;
+	tmpData->error_code = 0;
 	tmpData->error_details = strdup("success");
 	tmpData->next = NULL;
 	set_global_tmp_node(tmpData);
@@ -248,6 +250,7 @@ void test_eventNACK()
 	tmpData->status = strdup("NACK");
 	tmpData->trans_id = 14464;
 	tmpData->retry_count = 0;
+	tmpData->error_code = 0;
 	tmpData->error_details = strdup("success");
 	tmpData->next = NULL;
 	set_global_tmp_node(tmpData);
@@ -255,7 +258,6 @@ void test_eventNACK()
 	numLoops = 2;
 	initWebConfigNotifyTask();
 	processWebcfgEvents();
-	initEventHandlingTask();
 	webcfgCallback("portforwarding,14464,410448631,NACK,0,pam,192,failed", NULL);
 	sleep(1);
 	if(tmpData)
@@ -275,6 +277,7 @@ void test_invalidVersionNACK()
 	tmpData->status = strdup("NACK");
 	tmpData->trans_id = 14464;
 	tmpData->retry_count = 0;
+	tmpData->error_code = 0;
 	tmpData->error_details = strdup("success");
 	tmpData->next = NULL;
 	set_global_tmp_node(tmpData);
@@ -301,6 +304,7 @@ void test_eventEXPIRE()
 	tmpData->status = strdup("EXPIRE");
 	tmpData->trans_id = 14464;
 	tmpData->retry_count = 0;
+	tmpData->error_code = 0;
 	tmpData->error_details = strdup("success");
 	tmpData->next = NULL;
 
@@ -328,7 +332,6 @@ void test_eventEXPIRE()
 	numLoops = 2;
 	initWebConfigNotifyTask();
 	processWebcfgEvents();
-	initEventHandlingTask();
 	webcfgCallback("portforwarding,14464,0,EXPIRE,0", NULL);
 	sleep(1);
 	if(doc)
@@ -339,6 +342,7 @@ void test_eventEXPIRE()
 			WEBCFG_FREE(doc->entries->data);
 			WEBCFG_FREE(doc->entries);
 		}
+		doc->entries_count = 0;
 		WEBCFG_FREE(doc);
 	}
 }
@@ -351,6 +355,7 @@ void test_eventEXPIREWithoutRetry()
 	tmpData->status = strdup("EXPIRE");
 	tmpData->trans_id = 14464;
 	tmpData->retry_count = 0;
+	tmpData->error_code = 0;
 	tmpData->error_details = strdup("success");
 	tmpData->next = NULL;
 
@@ -359,7 +364,6 @@ void test_eventEXPIREWithoutRetry()
 	numLoops = 2;
 	initWebConfigNotifyTask();
 	processWebcfgEvents();
-	initEventHandlingTask();
 	webcfgCallback("homessid,14464,0,EXPIRE,0", NULL);
 	sleep(1);
 	if(tmpData)
@@ -380,13 +384,13 @@ void test_eventCrash()
 	tmpData->status = strdup("CRASH");
 	tmpData->trans_id = 14464;
 	tmpData->retry_count = 0;
+	tmpData->error_code = 0;
 	tmpData->error_details = strdup("crash");
 	tmpData->next = NULL;
 	set_global_tmp_node(tmpData);
 	numLoops = 2;
 	initWebConfigNotifyTask();
 	processWebcfgEvents();
-	initEventHandlingTask();
 	webcfgCallback("privatessid,0,3097089542", NULL);
 	sleep(1);
 }
@@ -399,6 +403,7 @@ void test_eventCrashNewVersion()
 	tmpData->status = strdup("CRASH");
 	tmpData->trans_id = 14464;
 	tmpData->retry_count = 0;
+	tmpData->error_code = 0;
 	tmpData->error_details = strdup("crash");
 	tmpData->next = NULL;
 
@@ -425,7 +430,6 @@ void test_eventCrashNewVersion()
 	numLoops = 2;
 	initWebConfigNotifyTask();
 	processWebcfgEvents();
-	initEventHandlingTask();
 	webcfgCallback("privatessid,0,0", NULL);
 	sleep(1);
 	if(doc)
@@ -436,6 +440,7 @@ void test_eventCrashNewVersion()
 			WEBCFG_FREE(doc->entries->data);
 			WEBCFG_FREE(doc->entries);
 		}
+		doc->entries_count = 0;
 		WEBCFG_FREE(doc);
 	}
 }
@@ -448,15 +453,15 @@ void test_eventCrashNewVersionWithoutRetry()
 	tmpData->status = strdup("CRASH");
 	tmpData->trans_id = 14464;
 	tmpData->retry_count = 0;
+	tmpData->error_code = 0;
 	tmpData->error_details = strdup("crash");
 	tmpData->next = NULL;
 	set_global_tmp_node(tmpData);
 	numLoops = 2;
 	initWebConfigNotifyTask();
 	processWebcfgEvents();
-	initEventHandlingTask();
 	webcfgCallback("homessid,0,309708942", NULL);
-	//sleep(1);
+	sleep(1);
 	if(tmpData)
 	{
 		WEBCFG_FREE(tmpData->name);
@@ -474,6 +479,7 @@ void test_eventCrashSameVersion()
 	tmpData->status = strdup("CRASH");
 	tmpData->trans_id = 14464;
 	tmpData->retry_count = 0;
+	tmpData->error_code = 0;
 	tmpData->error_details = strdup("crash");
 	tmpData->next = NULL;
 
@@ -500,9 +506,19 @@ void test_eventCrashSameVersion()
 	numLoops = 2;
 	initWebConfigNotifyTask();
 	processWebcfgEvents();
-	initEventHandlingTask();
 	webcfgCallback("portforwarding,0,12345", NULL);
 	sleep(1);
+	if(doc)
+	{
+		if(doc->entries)
+		{
+			WEBCFG_FREE(doc->entries->name_space);
+			WEBCFG_FREE(doc->entries->data);
+			WEBCFG_FREE(doc->entries);
+		}
+		doc->entries_count = 0;
+		WEBCFG_FREE(doc);
+	}
 }
 
 void test_eventCrashSameVersionWithoutRetry()
@@ -513,6 +529,7 @@ void test_eventCrashSameVersionWithoutRetry()
 	tmpData->status = strdup("CRASH");
 	tmpData->trans_id = 14464;
 	tmpData->retry_count = 0;
+	tmpData->error_code = 0;
 	tmpData->error_details = strdup("crash");
 	tmpData->next = NULL;
 
@@ -520,9 +537,15 @@ void test_eventCrashSameVersionWithoutRetry()
 	numLoops = 2;
 	initWebConfigNotifyTask();
 	processWebcfgEvents();
-	initEventHandlingTask();
 	webcfgCallback("privatessid,0,12345", NULL);
 	sleep(1);
+	if(tmpData)
+	{
+		WEBCFG_FREE(tmpData->name);
+		WEBCFG_FREE(tmpData->status);
+		WEBCFG_FREE(tmpData->error_details);
+		WEBCFG_FREE(tmpData);
+	}
 }
 
 void test_eventCrashLatestVersion()
@@ -533,6 +556,7 @@ void test_eventCrashLatestVersion()
 	tmpData->status = strdup("CRASH");
 	tmpData->trans_id = 14464;
 	tmpData->retry_count = 0;
+	tmpData->error_code = 0;
 	tmpData->error_details = strdup("crash");
 	tmpData->next = NULL;
 
@@ -540,9 +564,15 @@ void test_eventCrashLatestVersion()
 	numLoops = 2;
 	initWebConfigNotifyTask();
 	processWebcfgEvents();
-	initEventHandlingTask();
 	webcfgCallback("privatessid,0,12345", NULL);
 	sleep(1);
+	if(tmpData)
+	{
+		WEBCFG_FREE(tmpData->name);
+		WEBCFG_FREE(tmpData->status);
+		WEBCFG_FREE(tmpData->error_details);
+		WEBCFG_FREE(tmpData);
+	}
 }
 
 void err_invalidACK()
@@ -553,15 +583,22 @@ void err_invalidACK()
 	tmpData->status = strdup("ACK");
 	tmpData->trans_id = 1464;
 	tmpData->retry_count = 0;
+	tmpData->error_code = 0;
 	tmpData->error_details = strdup("success");
 	tmpData->next = NULL;
 	set_global_tmp_node(tmpData);
 	numLoops = 2;
 	initWebConfigNotifyTask();
 	processWebcfgEvents();
-	initEventHandlingTask();
 	webcfgCallback("privatessid,14464,410448631,ACK,0", NULL);
 	sleep(1);
+	if(tmpData)
+	{
+		WEBCFG_FREE(tmpData->name);
+		WEBCFG_FREE(tmpData->status);
+		WEBCFG_FREE(tmpData->error_details);
+		WEBCFG_FREE(tmpData);
+	}
 }
 
 void add_suites( CU_pSuite *suite )

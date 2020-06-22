@@ -30,6 +30,7 @@
 #include <wdmp-c.h>
 #include <base64.h>
 #include "webcfg_db.h"
+#include "webcfg_client.h"
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
@@ -37,7 +38,11 @@
 
 #ifdef MULTIPART_UTILITY
 
+#ifdef BUILD_YOCTO
 #define TEST_FILE_LOCATION		"/nvram/multipart.bin"
+#else
+#define TEST_FILE_LOCATION		"/tmp/multipart.bin"
+#endif
 
 #endif
 /*----------------------------------------------------------------------------*/
@@ -92,6 +97,7 @@ void *WebConfigMultipartTask(void *status)
 
 	//start webconfig notification thread.
 	initWebConfigNotifyTask();
+	initWebConfigClient();
 	WebcfgInfo("initDB %s\n", WEBCFG_DB_FILE);
 
 	initDB(WEBCFG_DB_FILE);
@@ -393,6 +399,7 @@ int testUtility()
 	char *transaction_uuid =NULL;
 	char ct[256] = {0};
 
+	WebcfgInfo("TEST_FILE_LOCATION is %s\n", TEST_FILE_LOCATION);
 	if(readFromFile(TEST_FILE_LOCATION, &data, &test_dataSize) == 1)
 	{
 		set_g_testfile(1);

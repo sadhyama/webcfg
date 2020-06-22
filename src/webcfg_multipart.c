@@ -25,6 +25,7 @@
 #include "webcfg_notify.h"
 #include "webcfg_blob.h"
 #include "webcfg_event.h"
+#include "webcfg_client.h"
 #include <pthread.h>
 #include <uuid/uuid.h>
 /*----------------------------------------------------------------------------*/
@@ -533,8 +534,17 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 			{
 				if((checkAndUpdateTmpRetryCount(subdoc_node, mp->entries[m].name_space))== WEBCFG_SUCCESS)
 				{
-					WebcfgInfo("WebConfig SET Request\n");
-					setValues(reqParam, paramCount, ATOMIC_SET_WEBCONFIG, NULL, NULL, &ret, &ccspStatus);
+					if(strcmp(mp->entries[m].name_space, "aker") == 0)
+					{
+						WebcfgInfo("WebConfig AKER Request\n");
+						WebcfgInfo("pm->entries[0].value is %s\n", pm->entries[0].value);
+						ret = send_aker_blob(pm->entries[0].value, trans_id);
+					}
+					else
+					{
+						WebcfgInfo("WebConfig SET Request\n");
+						setValues(reqParam, paramCount, ATOMIC_SET_WEBCONFIG, NULL, NULL, &ret, &ccspStatus);
+					}
 					if(ret == WDMP_SUCCESS)
 					{
 						WebcfgInfo("setValues success. ccspStatus : %d\n", ccspStatus);

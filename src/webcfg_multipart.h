@@ -23,12 +23,6 @@
 
 #define WEBCFG_FREE(__x__) if(__x__ != NULL) { free((void*)(__x__)); __x__ = NULL;} else {printf("Trying to free null pointer\n");}
 
-#ifdef BUILD_YOCTO
-#define DEVICE_PROPS_FILE       "/etc/device.properties"
-#else
-#define DEVICE_PROPS_FILE       "/tmp/device.properties"
-#endif
-
 #define ATOMIC_SET_WEBCONFIG	    3
 #define MAX_VALUE_LEN			128
 typedef struct

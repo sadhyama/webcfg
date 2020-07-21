@@ -30,6 +30,8 @@ char *__attribute__((weak)) getDeviceBootTime(void);
 char *__attribute__((weak)) getSerialNumber(void);
 char *__attribute__((weak)) getProductClass(void);
 char *__attribute__((weak)) getModelName(void);
+char *__attribute__((weak)) getConnClientParamName(void);
+char *__attribute__((weak)) getCujoParamName(void);
 char *__attribute__((weak)) getFirmwareVersion(void);
 char *__attribute__((weak)) get_deviceMAC(void);
 char *__attribute__((weak)) get_global_systemReadyTime(void);
@@ -41,6 +43,8 @@ void __attribute__((weak)) setValues(const param_t paramVal[], const unsigned in
 void __attribute__((weak)) sendNotification(char *payload, char *source, char *destination);
 int __attribute__((weak)) registerWebcfgEvent(WebConfigEventCallback webcfgEventCB);
 WDMP_STATUS __attribute__((weak)) mapStatus(int ret);
+void __attribute__((weak)) setAttributes(param_t *attArr, const unsigned int paramCount, money_trace_spans *timeSpan, WDMP_STATUS *retStatus);
+
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
@@ -61,6 +65,16 @@ char *getProductClass(void)
 }
 
 char *getModelName(void)
+{
+    return NULL;
+}
+
+char *getConnClientParamName(void)
+{
+    return NULL;
+}
+
+char *getCujoParamName(void)
 {
     return NULL;
 }
@@ -137,4 +151,13 @@ WDMP_STATUS mapStatus(int ret)
 {
 	UNUSED(ret);
 	return 0;
+}
+
+void setAttributes(param_t *attArr, const unsigned int paramCount, money_trace_spans *timeSpan, WDMP_STATUS *retStatus)
+{
+	UNUSED(attArr);
+	UNUSED(paramCount);
+	UNUSED(timeSpan);
+	UNUSED(retStatus);
+	return;
 }

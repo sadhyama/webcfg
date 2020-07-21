@@ -55,6 +55,15 @@ void setValues(const param_t paramVal[], const unsigned int paramCount, const in
 	return;
 }
 
+void setAttributes(param_t *attArr, const unsigned int paramCount, money_trace_spans *timeSpan, WDMP_STATUS *retStatus)
+{
+	UNUSED(attArr);
+	UNUSED(paramCount);
+	UNUSED(timeSpan);
+	*retStatus = WDMP_SUCCESS;
+	return;
+}
+
 int getForceSync(char** pString, char **transactionId)
 {
 	UNUSED(pString);
@@ -99,6 +108,17 @@ char * getModelName()
 	return mName;
 }
 
+char * getConnClientParamName()
+{
+	char *pName = strdup("ConnClientParamName");
+	return pName;
+}
+
+char * getCujoParamName()
+{
+	char *cName = strdup("CujoParamName");
+	return cName;
+}
 char * getFirmwareVersion()
 {
 	char *fName = strdup("Firmware.bin");
@@ -601,6 +621,87 @@ void err_invalidACK()
 	}
 }
 
+
+//mesh,14464,410448631,ACK;enabled,0 (ACK enabled event)
+void test_eventACKEnabled()
+{
+	webconfig_tmp_data_t *tmpData = (webconfig_tmp_data_t *)malloc(sizeof(webconfig_tmp_data_t));
+	tmpData->name = strdup("mesh");
+	tmpData->version = 410448631;
+	tmpData->status = strdup("ACK;enabled");
+	tmpData->trans_id = 14464;
+	tmpData->retry_count = 0;
+	tmpData->error_code = 0;
+	tmpData->error_details = strdup("success");
+	tmpData->next = NULL;
+	set_global_tmp_node(tmpData);
+	numLoops = 2;
+	initWebConfigNotifyTask();
+	processWebcfgEvents();
+	webcfgCallback("mesh,14464,410448631,ACK;enabled,0", NULL);
+	sleep(1);
+}
+
+//mesh,1234,410448631,ACK;disabled,0 (ACK disabled event)
+void test_eventACKDisabled()
+{
+	webconfig_tmp_data_t *tmpData = (webconfig_tmp_data_t *)malloc(sizeof(webconfig_tmp_data_t));
+	tmpData->name = strdup("mesh");
+	tmpData->version = 410448631;
+	tmpData->status = strdup("ACK;disabled");
+	tmpData->trans_id = 1234;
+	tmpData->retry_count = 0;
+	tmpData->error_code = 0;
+	tmpData->error_details = strdup("success");
+	tmpData->next = NULL;
+	set_global_tmp_node(tmpData);
+	numLoops = 2;
+	initWebConfigNotifyTask();
+	processWebcfgEvents();
+	webcfgCallback("mesh,1234,410448631,ACK;disabled,0", NULL);
+	sleep(1);
+}
+
+//advsecurity,14464,410448631,ACK;enabled,0 (ACK enabled event)
+void test_adveventACKEnabled()
+{
+	webconfig_tmp_data_t *tmpData = (webconfig_tmp_data_t *)malloc(sizeof(webconfig_tmp_data_t));
+	tmpData->name = strdup("advsecurity");
+	tmpData->version = 410448631;
+	tmpData->status = strdup("ACK;enabled");
+	tmpData->trans_id = 14464;
+	tmpData->retry_count = 0;
+	tmpData->error_code = 0;
+	tmpData->error_details = strdup("success");
+	tmpData->next = NULL;
+	set_global_tmp_node(tmpData);
+	numLoops = 2;
+	initWebConfigNotifyTask();
+	processWebcfgEvents();
+	webcfgCallback("advsecurity,14464,410448631,ACK;enabled,0", NULL);
+	sleep(1);
+}
+
+//advsecurity,14464,410448631,ACK;disabled,0 (ACK disabled event)
+void test_adveventACKDisabled()
+{
+	webconfig_tmp_data_t *tmpData = (webconfig_tmp_data_t *)malloc(sizeof(webconfig_tmp_data_t));
+	tmpData->name = strdup("advsecurity");
+	tmpData->version = 410448631;
+	tmpData->status = strdup("ACK;disabled");
+	tmpData->trans_id = 14464;
+	tmpData->retry_count = 0;
+	tmpData->error_code = 0;
+	tmpData->error_details = strdup("success");
+	tmpData->next = NULL;
+	set_global_tmp_node(tmpData);
+	numLoops = 2;
+	initWebConfigNotifyTask();
+	processWebcfgEvents();
+	webcfgCallback("advsecurity,14464,410448631,ACK;disabled,0", NULL);
+	sleep(1);
+}
+
 void add_suites( CU_pSuite *suite )
 {
     *suite = CU_add_suite( "tests", NULL, NULL );
@@ -619,6 +720,10 @@ void add_suites( CU_pSuite *suite )
 	CU_add_test( *suite, "Crash Event same version without retry\n", test_eventCrashSameVersionWithoutRetry);
 	CU_add_test( *suite, "Crash Event Latest version\n",test_eventCrashLatestVersion);
 	CU_add_test( *suite, "Invalid ACK Event\n",err_invalidACK);
+	CU_add_test( *suite, "ACK enabled Event\n", test_eventACKEnabled);
+	CU_add_test( *suite, "ACK disabled Event\n", test_eventACKDisabled);
+	CU_add_test( *suite, "adv ACK enabled Event\n", test_adveventACKEnabled);
+	CU_add_test( *suite, "adv ACK disabled Event\n", test_adveventACKDisabled);
 }
 
 /*----------------------------------------------------------------------------*/

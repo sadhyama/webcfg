@@ -39,6 +39,8 @@ char * getDeviceBootTime();
 char * getSerialNumber();
 char * getProductClass();
 char * getModelName();
+char * getConnClientParamName();
+char * getCujoParamName();
 char * getFirmwareVersion();
 char* get_deviceMAC();
 
@@ -77,4 +79,14 @@ typedef void (*WebConfigEventCallback)(char* Info, void *user_data);
 int registerWebcfgEvent(WebConfigEventCallback webcfgEventCB);
 
 WDMP_STATUS mapStatus(int ret);
+
+/**
+ * @brief setAttributes interface sets parameter notify attribute.
+ *
+ * @param[in] attArr parameter attributes Array.
+ * @param[in] paramCount Number of parameters.
+ * @param[out] timeSpan timing_values for each component.
+ * @param[out] retStatus Returns status
+ */
+void setAttributes(param_t *attArr, const unsigned int paramCount, money_trace_spans *timeSpan, WDMP_STATUS *retStatus);
 #endif

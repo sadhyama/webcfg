@@ -252,22 +252,22 @@ void* processSubdocEvents()
 				doctimer_node = getTimerNode(eventParam->subdoc_name);
 
 				WebcfgInfo("Event detection\n");
-				if ((eventParam->status !=NULL)&&((strcmp(eventParam->status, "ACK")==0) ||(strcmp(eventParam->status, "ACK;enabled")==0) || (strcmp(eventParam->status, "ACK;disabled")==0))) && (eventParam->timeout == 0))
+				//Testing purpose
+				if ((eventParam->status !=NULL) && strcmp(eventParam->subdoc_name, "portforwarding") ==0)
+				{
+					eventParam->status = strdup("ACK;disabled");
+				}
+				else if ((eventParam->status !=NULL) && strcmp(eventParam->subdoc_name, "advsecurity") ==0)
+				{
+					eventParam->status = strdup("ACK;enabled");
+				}
+				if (((eventParam->status !=NULL) && (strcmp(eventParam->status, "ACK")==0 || (strcmp(eventParam->status, "ACK;enabled")==0) || (strcmp(eventParam->status, "ACK;disabled")==0))) && (eventParam->timeout == 0))
 				{
 					//Based on ACK event if mesh/cujo is enabled then connected client notification need to be turned OFF
-					if ((strcmp(eventParam->subdoc_name, "mesh") ==0) || (strcmp(eventParam->subdoc_name, "advsecurity") ==0) || (strcmp(eventParam->subdoc_name, "portforwarding") ==0))
+					if ((eventParam->subdoc_name !=NULL) &&((strcmp(eventParam->subdoc_name, "mesh") ==0) || (strcmp(eventParam->subdoc_name, "advsecurity") ==0) || (strcmp(eventParam->subdoc_name, "portforwarding") ==0)))
 					{
 						WebcfgInfo("ACK for mesh/cujo received: %s,%lu,%lu,%s,%lu\n", eventParam->subdoc_name,(long)eventParam->trans_id, (long)eventParam->version, eventParam->status, (long)eventParam->timeout);
-						//handleConnectedClientNotify(eventParam->status);
-						//Testing purpose
-						if (strcmp(eventParam->subdoc_name, "portforwarding") ==0)
-						{
-							handleConnectedClientNotify("ACK;disabled");
-						}
-						else
-						{
-							handleConnectedClientNotify("ACK;enabled");
-						}
+						handleConnectedClientNotify(eventParam->status);
 					}
 					WebcfgInfo("ACK EVENT: %s,%lu,%lu,ACK,%lu %s\n", eventParam->subdoc_name,(long)eventParam->trans_id, (long)eventParam->version, (long)eventParam->timeout, "(doc apply success)");
 					WebcfgInfo("doc apply success, proceed to add to DB\n");
@@ -435,7 +435,7 @@ void* processSubdocEvents()
 						}
 					}
 				}
-				free_event_params_struct(eventParam);
+				//free_event_params_struct(eventParam);
 			}
 			else
 			{
@@ -1032,7 +1032,8 @@ expire_timer_t * getTimerNode(char *docname)
 
 void handleConnectedClientNotify(char *status)
 {
-	char *tmpStr = NULL, *token = NULL;
+	char tmpStr[32] = {'\0'};
+	char *token = NULL;
 	char *apply_status = NULL;
 	const char s[2] = ";";
 	char notif[20] = "";
@@ -1042,7 +1043,7 @@ void handleConnectedClientNotify(char *status)
 
 	if(status != NULL)
 	{
-		tmpStr = strdup(status);
+		strcpy(tmpStr , status);
 		token = strtok(tmpStr, s);
 		if( token != NULL )
 		{

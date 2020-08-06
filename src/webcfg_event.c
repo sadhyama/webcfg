@@ -62,6 +62,7 @@ WEBCFG_STATUS deleteFromTimerList(char* doc_name);
 WEBCFG_STATUS checkDBVersion(char *docname, uint32_t version);
 WEBCFG_STATUS validateEvent(webconfig_tmp_data_t *temp, char *docname, uint16_t txid);
 expire_timer_t * getTimerNode(char *docname);
+void handleConnectedClientNotify(char *status);
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
@@ -251,8 +252,14 @@ void* processSubdocEvents()
 				doctimer_node = getTimerNode(eventParam->subdoc_name);
 
 				WebcfgInfo("Event detection\n");
-				if (((eventParam->status !=NULL)&&(strcmp(eventParam->status, "ACK")==0)) && (eventParam->timeout == 0))
+				if (((eventParam->status !=NULL) && (strcmp(eventParam->status, "ACK")==0 || (strcmp(eventParam->status, "ACK;enabled")==0) || (strcmp(eventParam->status, "ACK;disabled")==0))) && (eventParam->timeout == 0))
 				{
+					//Based on ACK event if mesh/cujo is enabled then connected client notification need to be turned OFF
+					if ((eventParam->subdoc_name !=NULL) &&((strcmp(eventParam->subdoc_name, "mesh") ==0) || (strcmp(eventParam->subdoc_name, "advsecurity") ==0)))
+					{
+						WebcfgInfo("ACK for mesh/cujo received: %s,%lu,%lu,%s,%lu\n", eventParam->subdoc_name,(long)eventParam->trans_id, (long)eventParam->version, eventParam->status, (long)eventParam->timeout);
+						handleConnectedClientNotify(eventParam->status);
+					}
 					WebcfgInfo("ACK EVENT: %s,%lu,%lu,ACK,%lu %s\n", eventParam->subdoc_name,(long)eventParam->trans_id, (long)eventParam->version, (long)eventParam->timeout, "(doc apply success)");
 					WebcfgInfo("doc apply success, proceed to add to DB\n");
 					if( validateEvent(subdoc_node, eventParam->subdoc_name, eventParam->trans_id) == WEBCFG_SUCCESS)
@@ -1011,4 +1018,75 @@ expire_timer_t * getTimerNode(char *docname)
 	}
 	WebcfgDebug("getTimerNode failed for doc %s\n", docname);
 	return NULL;
+}
+
+
+void handleConnectedClientNotify(char *status)
+{
+	char tmpStr[32] = {'\0'};
+	char *token = NULL;
+	char *apply_status = NULL;
+	const char s[2] = ";";
+	char notif[20] = "";
+	WDMP_STATUS ret = WDMP_FAILURE;
+	char * paramName = NULL;
+	param_t *attArr = NULL;
+
+	if(status != NULL)
+	{
+		strcpy(tmpStr , status);
+		token = strtok(tmpStr, s);
+		if( token != NULL )
+		{
+			apply_status = strtok(NULL, s);
+			if(apply_status != NULL)
+			{
+				WebcfgInfo("apply_status is %s\n", apply_status);
+
+				if(strcmp(apply_status, "enabled")==0)
+				{
+					snprintf(notif, sizeof(notif), "%d", 0);
+				}
+				else if(strcmp(apply_status, "disabled")==0)
+				{
+					snprintf(notif, sizeof(notif), "%d", 1);
+				}
+				else
+				{
+					WebcfgError("Invalid apply status in ACK event\n");
+					return;
+				}
+
+				paramName = getConnClientParamName();
+				if(paramName == NULL)
+				{
+					WebcfgError("Failed to get connected client paramName\n");
+					return;
+				}
+				attArr = (param_t *) malloc(sizeof(param_t));
+				if(attArr !=NULL)
+				{
+					memset(attArr,0,sizeof(param_t));
+					attArr[0].value = (char *) malloc(sizeof(char) * 20);
+					strncpy(attArr[0].value, notif, 20);
+					attArr[0].name = paramName;
+					attArr[0].type = WDMP_INT;
+					WebcfgDebug("Notify paramName %s\n", paramName);
+					setAttributes(attArr, 1, NULL, &ret);
+					if (ret != WDMP_SUCCESS)
+					{
+						WebcfgError("setAttributes failed for parameter : %s notif:%s ret: %d\n", paramName, notif, ret);
+					}
+					else
+					{
+						WebcfgInfo("setAttributes success for parameter : %s notif:%s ret: %d\n",paramName, notif, ret);
+					}
+					WEBCFG_FREE(attArr[0].value);
+					WEBCFG_FREE(attArr);
+				}
+			}
+		}
+
+	}
+	return;
 }

@@ -19,6 +19,7 @@
 #include "webcfg.h"
 #include <wrp-c.h>
 #include <libparodus.h>
+#include "webcfg_db.h"
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
@@ -39,4 +40,6 @@ WEBCFG_STATUS checkAkerStatus();
 void processAkerUpdateDelete(wrp_msg_t *wrpMsg);
 void processAkerRetrieve(wrp_msg_t *wrpMsg);
 libpd_instance_t get_webcfg_instance(void);
+AKER_STATUS processAkerSubdoc(webconfig_tmp_data_t *docNode, int akerIndex);
+void updateAkerMaxRetry(webconfig_tmp_data_t *temp, char *docname);
 #endif

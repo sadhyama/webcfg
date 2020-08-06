@@ -38,7 +38,7 @@ char device_mac[32] = {'\0'};
 
 char* get_deviceMAC()
 {
-	strcpy(device_mac, "14cfeXXXXXXX");
+	strcpy(device_mac, "XXXXXXXXXXXX");
 	return device_mac;
 }
 void setValues(const param_t paramVal[], const unsigned int paramCount, const int setType, char *transactionId, money_trace_spans *timeSpan, WDMP_STATUS *retStatus, int *ccspStatus)

@@ -41,6 +41,7 @@
 /*                            File Scoped Variables                           */
 /*----------------------------------------------------------------------------*/
 libpd_instance_t webcfg_instance;
+static pthread_t clientthreadId=0;
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
 /*----------------------------------------------------------------------------*/
@@ -61,15 +62,19 @@ libpd_instance_t get_webcfg_instance(void)
 {
     return webcfg_instance;
 }
+
+pthread_t get_global_client_threadid()
+{
+    return clientthreadId;
+}
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
 /*----------------------------------------------------------------------------*/
 static void webConfigClientReceive()
 {
 	int err = 0;
-	pthread_t threadId;
 
-	err = pthread_create(&threadId, NULL, parodus_receive, NULL);
+	err = pthread_create(&clientthreadId, NULL, parodus_receive, NULL);
 	if (err != 0) 
 	{
 		WebcfgError("Error creating webConfigClientReceive thread :[%s]\n", strerror(err));

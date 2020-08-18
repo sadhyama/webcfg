@@ -194,9 +194,25 @@ void *WebConfigMultipartTask(void *status)
 			WebcfgError("Error joining thread\n");
 		}
 	}
+
+	if(get_global_client_threadid())
+	{
+		ret = pthread_join (get_global_client_threadid(), NULL);
+		if(ret ==0)
+		{
+			WebcfgInfo("client thread : pthread_join returns success\n");
+		}
+		else
+		{
+			WebcfgError("Error joining client thread\n");
+		}
+	}
+	WebcfgInfo("webcfg_instance libparodus_shutdown\n");
+	libpd_instance_t web_inst = get_webcfg_instance();
+	libparodus_shutdown(&web_inst);
 	WebcfgInfo("B4 pthread_exit\n");
 	pthread_exit(0);
-	WebcfgDebug("After pthread_exit\n");
+	WebcfgInfo("After pthread_exit\n");
 	return NULL;
 }
 

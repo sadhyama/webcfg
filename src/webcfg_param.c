@@ -132,6 +132,7 @@ int process_params( wparam_t *e, msgpack_object_map *map )
                         return -1;
                     } else {
                         e->type = (uint16_t) p->val.via.u64;
+			WebcfgInfo("e->type is %d\n", e->type);
                     }
                     objects_left &= ~(1 << 0);
                 }
@@ -143,6 +144,7 @@ int process_params( wparam_t *e, msgpack_object_map *map )
                 if( 0 == match(p, "name") ) {
                     e->name = strndup( p->val.via.str.ptr, p->val.via.str.size );
                     objects_left &= ~(1 << 1);
+		    WebcfgInfo("e->name is %s\n", e->name);
                 }
 		if( 0 == match(p, "value") ) {
 			WebcfgDebug("blob size update\n");
@@ -154,6 +156,7 @@ int process_params( wparam_t *e, msgpack_object_map *map )
 			e->value_size =(uint32_t) p->val.via.str.size;
 			WebcfgDebug("e->value_size is %lu\n", (long)e->value_size);
 			objects_left &= ~(1 << 2);
+			WebcfgInfo("e->value is %lu\n", (long)e->value);
                 }
 	
             }
@@ -172,10 +175,12 @@ int process_params( wparam_t *e, msgpack_object_map *map )
 int process_webcfgparam( webcfgparam_t *pm, msgpack_object *obj )
 {
     msgpack_object_array *array = &obj->via.array;
+    WebcfgInfo("Inside process_webcfgparam\n");
     if( 0 < array->size ) {
         size_t i;
 
         pm->entries_count = array->size;
+	WebcfgInfo("array->size is %d\n", array->size);
         pm->entries = (wparam_t *) malloc( sizeof(wparam_t) * pm->entries_count );
         if( NULL == pm->entries ) {
             pm->entries_count = 0;

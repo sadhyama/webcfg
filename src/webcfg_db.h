@@ -96,7 +96,7 @@ WEBCFG_STATUS initDB(char * db_file_path);
 
 WEBCFG_STATUS addNewDocEntry(size_t count);
 
-int writeToDBFile(char * db_file_path, char * data, size_t size);
+//int writeToDBFile(char * db_file_path, char * data, size_t size);
 
 WEBCFG_STATUS generateBlob();
 

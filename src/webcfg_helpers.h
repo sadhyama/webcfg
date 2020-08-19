@@ -67,5 +67,5 @@ void* helper_convert( const void *buf, size_t len,
                       process_fn_t process,
                       destroy_fn_t destroy );
 
-
+int writeToDBFile(char * db_file_path, char * data, size_t size);
 #endif

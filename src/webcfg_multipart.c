@@ -493,9 +493,9 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 		ret = WDMP_FAILURE;
 		WebcfgInfo("mp->entries[%d].name_space %s\n", m, mp->entries[m].name_space);
 		WebcfgInfo("mp->entries[%d].etag %lu\n" ,m,  (long)mp->entries[m].etag);
-		WebcfgDebug("mp->entries[%d].data %s\n" ,m,  mp->entries[m].data);
+		WebcfgInfo("mp->entries[%d].data %s\n" ,m,  mp->entries[m].data);
 
-		WebcfgDebug("mp->entries[%d].data_size is %zu\n", m,mp->entries[m].data_size);
+		WebcfgInfo("mp->entries[%d].data_size is %zu\n", m,mp->entries[m].data_size);
 
 		if(strcmp(mp->entries[m].name_space, "aker") == 0)
 		{

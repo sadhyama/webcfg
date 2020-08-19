@@ -249,15 +249,15 @@ AKER_STATUS processAkerSubdoc(webconfig_tmp_data_t *docNode, int akerIndex)
 	}
 
 	m = akerIndex;
-	WebcfgDebug("gmp->entries_count %d\n",(int)gmp->entries_count);
+	WebcfgInfo("gmp->entries_count %d\n",(int)gmp->entries_count);
 	if(strcmp(gmp->entries[m].name_space, "aker") == 0)
 	{
-		WebcfgDebug("gmp->entries[%d].name_space %s\n", m, gmp->entries[m].name_space);
-		WebcfgDebug("gmp->entries[%d].etag %lu\n" ,m,  (long)gmp->entries[m].etag);
-		WebcfgDebug("gmp->entries[%d].data %s\n" ,m,  gmp->entries[m].data);
-		WebcfgDebug("gmp->entries[%d].data_size is %zu\n", m,gmp->entries[m].data_size);
+		WebcfgInfo("gmp->entries[%d].name_space %s\n", m, gmp->entries[m].name_space);
+		WebcfgInfo("gmp->entries[%d].etag %lu\n" ,m,  (long)gmp->entries[m].etag);
+		WebcfgInfo("gmp->entries[%d].data %s\n" ,m,  gmp->entries[m].data);
+		WebcfgInfo("gmp->entries[%d].data_size is %zu\n", m,gmp->entries[m].data_size);
 
-		WebcfgDebug("--------------decode root doc-------------\n");
+		WebcfgInfo("--------------decode root doc-------------\n");
 		pm = webcfgparam_convert( gmp->entries[m].data, gmp->entries[m].data_size+1 );
 		if ( NULL != pm)
 		{
@@ -266,7 +266,7 @@ AKER_STATUS processAkerSubdoc(webconfig_tmp_data_t *docNode, int akerIndex)
 			reqParam = (param_t *) malloc(sizeof(param_t) * paramCount);
 			memset(reqParam,0,(sizeof(param_t) * paramCount));
 
-			WebcfgDebug("paramCount is %d\n", paramCount);
+			WebcfgInfo("paramCount is %d\n", paramCount);
 			for (i = 0; i < paramCount; i++)
 			{
 			        if(pm->entries[i].value != NULL)
@@ -277,7 +277,7 @@ AKER_STATUS processAkerSubdoc(webconfig_tmp_data_t *docNode, int akerIndex)
 						appended_doc = webcfg_appendeddoc( gmp->entries[m].name_space, gmp->entries[m].etag, pm->entries[i].value, pm->entries[i].value_size, &doc_transId);
 						if(appended_doc != NULL)
 						{
-							WebcfgDebug("webcfg_appendeddoc doc_transId : %hu\n", doc_transId);
+							WebcfgInfo("webcfg_appendeddoc doc_transId : %hu\n", doc_transId);
 							if(pm->entries[i].name !=NULL)
 							{
 								reqParam[i].name = strdup(pm->entries[i].name);
@@ -298,7 +298,7 @@ AKER_STATUS processAkerSubdoc(webconfig_tmp_data_t *docNode, int akerIndex)
 					}
 			        }
 				WebcfgInfo("Request:> param[%d].name = %s, type = %d\n",i,reqParam[i].name,reqParam[i].type);
-				WebcfgDebug("Request:> param[%d].value = %s\n",i,reqParam[i].value);
+				WebcfgInfo("Request:> param[%d].value = %s\n",i,reqParam[i].value);
 			}
 
 			if(reqParam !=NULL && validate_request_param(reqParam, paramCount) == WEBCFG_SUCCESS)

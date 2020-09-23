@@ -77,6 +77,7 @@ void sendNotification(char *payload, char *source, char *destination);
 
 typedef void (*WebConfigEventCallback)(char* Info, void *user_data);
 int registerWebcfgEvent(WebConfigEventCallback webcfgEventCB);
+int unregisterWebcfgEvent();
 
 WDMP_STATUS mapStatus(int ret);
 

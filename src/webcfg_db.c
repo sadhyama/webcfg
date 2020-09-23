@@ -357,6 +357,12 @@ int get_successDocCount()
     return success_doc_count;
 }
 
+void reset_successDocCount()
+{
+    success_doc_count = 0;
+}
+
+
 int get_doc_fail()
 {
     return doc_fail_flag;

@@ -42,4 +42,9 @@ void processAkerRetrieve(wrp_msg_t *wrpMsg);
 libpd_instance_t get_webcfg_instance(void);
 AKER_STATUS processAkerSubdoc(webconfig_tmp_data_t *docNode, int akerIndex);
 void updateAkerMaxRetry(webconfig_tmp_data_t *temp, char *docname);
+int akerwait__ (unsigned int secs);
+pthread_cond_t *get_global_client_con(void);
+pthread_mutex_t *get_global_client_mut(void);
+pthread_cond_t *get_global_svc_con(void);
+pthread_mutex_t *get_global_svc_mut(void);
 #endif

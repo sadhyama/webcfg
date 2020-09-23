@@ -98,6 +98,16 @@ char * get_global_contentLen(void)
 {
 	return g_contentLen;
 }
+
+int get_global_eventFlag(void)
+{
+    return eventFlag;
+}
+
+void reset_global_eventFlag()
+{
+	eventFlag = 0;
+}
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
 /*----------------------------------------------------------------------------*/
@@ -734,7 +744,11 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 					backoffRetryTime = (int) pow(2, c) -1;
 				}
 				WebcfgError("aker doc is pending, retrying in backoff interval %dsec\n", backoffRetryTime);
-				sleep(backoffRetryTime);
+				if (akerwait__ (backoffRetryTime))
+				{
+					WebcfgInfo("g_shutdown true, break checkAkerStatus\n");
+					break;
+				}
 				c++;
 			}
 			else

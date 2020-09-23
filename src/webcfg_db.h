@@ -126,6 +126,8 @@ int get_numOfMpDocs();
 
 int get_successDocCount();
 
+void reset_successDocCount();
+
 int get_doc_fail();
 
 void set_doc_fail( int value);

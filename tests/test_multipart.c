@@ -146,6 +146,11 @@ int registerWebcfgEvent(WebConfigEventCallback webcfgEventCB)
 	return 0;
 }
 
+int unregisterWebcfgEvent()
+{
+	return 0;
+}
+
 void test_multipart()
 {
 	unsigned long status = 0;

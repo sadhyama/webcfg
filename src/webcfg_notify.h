@@ -39,4 +39,6 @@ typedef struct _notify_params
 void initWebConfigNotifyTask();
 pthread_t get_global_notify_threadid();
 void addWebConfgNotifyMsg(char *docname, uint32_t version, char *status, char *error_details, char *transaction_uuid, uint32_t timeout,char* type, uint16_t error_code, char *root_string, long response_code);
+pthread_cond_t *get_global_notify_con(void);
+pthread_mutex_t *get_global_notify_mut(void);
 #endif

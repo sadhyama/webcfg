@@ -58,4 +58,11 @@ WEBCFG_STATUS retryMultipartSubdoc(webconfig_tmp_data_t *docNode, char *docName)
 WEBCFG_STATUS checkAndUpdateTmpRetryCount(webconfig_tmp_data_t *temp, char *docname);
 uint32_t getDocVersionFromTmpList(webconfig_tmp_data_t *temp, char *docname);
 void free_event_params_struct(event_params_t *param);
+pthread_cond_t *get_global_event_con(void);
+pthread_mutex_t *get_global_event_mut(void);
+pthread_t get_global_event_threadid();
+pthread_t get_global_process_threadid();
+pthread_cond_t *get_global_event_con(void);
+pthread_mutex_t *get_global_event_mut(void);
+
 #endif

@@ -52,6 +52,16 @@ pthread_t get_global_notify_threadid()
     return NotificationThreadId;
 }
 
+pthread_cond_t *get_global_notify_con(void)
+{
+    return &notify_con;
+}
+
+pthread_mutex_t *get_global_notify_mut(void)
+{
+    return &notify_mut;
+}
+
 //To handle webconfig notification tasks
 void initWebConfigNotifyTask()
 {
@@ -251,7 +261,13 @@ void* processWebConfgNotification()
 		}
 		else
 		{
-			WebcfgDebug("Before pthread cond wait in notify thread\n");
+			if (get_global_shutdown())
+			{
+				WebcfgInfo("g_shutdown in notify consumer thread\n");
+				pthread_mutex_unlock (&notify_mut);
+				break;
+			}
+			WebcfgInfo("Before pthread cond wait in notify thread\n");
 			pthread_cond_wait(&notify_con, &notify_mut);
 			pthread_mutex_unlock (&notify_mut);
 			WebcfgDebug("mutex unlock in notify thread after cond wait\n");

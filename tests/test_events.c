@@ -160,6 +160,11 @@ int registerWebcfgEvent(WebConfigEventCallback webcfgEventCB)
 	return 0;
 }
 
+int unregisterWebcfgEvent()
+{
+	return 0;
+}
+
 //privatessid,14464,410448631,ACK,0 (ACK success)
 void test_eventACK()
 {

@@ -144,6 +144,12 @@ int registerWebcfgEvent(WebConfigEventCallback webcfgEventCB)
 	UNUSED(webcfgEventCB);
 	return 0;
 }
+
+int unregisterWebcfgEvent()
+{
+	return 0;
+}
+
 int main()
 {
 	numLoops = 10;

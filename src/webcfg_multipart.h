@@ -59,4 +59,7 @@ void refreshConfigVersionList(char *versionsList, int http_status);
 char * get_global_contentLen(void);
 void getRootDocVersionFromDBCache(uint32_t *rt_version, char **rt_string, int *subdoclist);
 void derive_root_doc_version_string(char **rootVersion, uint32_t *root_ver, int status);
+void reset_global_eventFlag();
+int get_global_eventFlag(void);
+pthread_t get_global_process_threadid();
 #endif

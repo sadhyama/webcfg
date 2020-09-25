@@ -87,7 +87,7 @@ void initWebConfigMultipartTask(unsigned long status)
 void *WebConfigMultipartTask(void *status)
 {
 	pthread_detach(pthread_self());
-	int ret = 0;
+	//int ret = 0;
 	int rv=0;
 	int forced_sync=0;
         int Status = 0;
@@ -213,15 +213,6 @@ void *WebConfigMultipartTask(void *status)
 	//libpd_instance_t web_inst = get_webcfg_instance();
 	//libparodus_shutdown(&web_inst);
 
-	ret = unregisterWebcfgEvent();
-	if(ret)
-	{
-		WebcfgInfo("unregisterWebcfgEvent success\n");
-	}
-	else
-	{
-		WebcfgError("unregisterWebcfgEvent failed\n");
-	}
 
 	WebcfgInfo("event process thread: pthread_join\n");
 	JoinThread (get_global_process_threadid());
@@ -577,10 +568,10 @@ void JoinThread (pthread_t threadId)
 	ret = pthread_join (threadId, NULL);
 	if(ret ==0)
 	{
-		WebcfgInfo("pthread_join returns success\n");
+		WebcfgInfo("pthread_join returns success, threadId %ld\n", threadId);
 	}
 	else
 	{
-		WebcfgError("Error joining thread\n");
+		WebcfgError("Error joining thread threadId %ld\n", threadId);
 	}
 }

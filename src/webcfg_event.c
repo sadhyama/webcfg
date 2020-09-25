@@ -173,6 +173,16 @@ void* blobEventHandler()
 			}
 		}
 	}
+	WebcfgInfo("unregisterWebcfgEvent from event handler thread\n");
+	ret = unregisterWebcfgEvent();
+	if(ret)
+	{
+		WebcfgInfo("unregisterWebcfgEvent success\n");
+	}
+	else
+	{
+		WebcfgError("unregisterWebcfgEvent failed\n");
+	}
 	return NULL;
 }
 

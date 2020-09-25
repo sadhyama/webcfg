@@ -62,4 +62,5 @@ void derive_root_doc_version_string(char **rootVersion, uint32_t *root_ver, int 
 void reset_global_eventFlag();
 int get_global_eventFlag(void);
 pthread_t get_global_process_threadid();
+void multipart_destroy( multipart_t *m );
 #endif

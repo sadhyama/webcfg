@@ -188,17 +188,20 @@ void *WebConfigMultipartTask(void *status)
 	}
 
 	/* release all active threads before shutdown */
-	pthread_mutex_lock (get_global_notify_mut());
-	pthread_cond_signal (get_global_notify_con());
-	pthread_mutex_unlock (get_global_notify_mut());
+	WebcfgInfo("Trigger event cond signal\n");
+	pthread_mutex_lock (get_global_event_mut());
+	pthread_cond_signal (get_global_event_con());
+	pthread_mutex_unlock (get_global_event_mut());
 
+	WebcfgInfo("Trigger client cond signal\n");
 	pthread_mutex_lock (get_global_client_mut());
 	pthread_cond_signal (get_global_client_con());
 	pthread_mutex_unlock (get_global_client_mut());
 
-	pthread_mutex_lock (get_global_event_mut());
-	pthread_cond_signal (get_global_event_con());
-	pthread_mutex_unlock (get_global_event_mut());
+	WebcfgInfo("Trigger notify cond signal\n");
+	pthread_mutex_lock (get_global_notify_mut());
+	pthread_cond_signal (get_global_notify_con());
+	pthread_mutex_unlock (get_global_notify_mut());
 
 	pthread_mutex_lock (get_global_svc_mut());
 	WebcfgInfo("Trigger svc_con cond signal\n");
@@ -206,9 +209,9 @@ void *WebConfigMultipartTask(void *status)
 	WebcfgInfo("After svc_con cond signal\n");
 	pthread_mutex_unlock (get_global_svc_mut());
 
-	WebcfgInfo("webcfg_instance libparodus_shutdown\n");
-	libpd_instance_t web_inst = get_webcfg_instance();
-	libparodus_shutdown(&web_inst);
+	//WebcfgInfo("webcfg_instance libparodus_shutdown\n");
+	//libpd_instance_t web_inst = get_webcfg_instance();
+	//libparodus_shutdown(&web_inst);
 
 	ret = unregisterWebcfgEvent();
 	if(ret)
@@ -220,7 +223,10 @@ void *WebConfigMultipartTask(void *status)
 		WebcfgError("unregisterWebcfgEvent failed\n");
 	}
 
-	WebcfgInfo ("joining threads\n");
+	WebcfgInfo("event process thread: pthread_join\n");
+	JoinThread (get_global_process_threadid());
+
+	WebcfgInfo("notify thread: pthread_join\n");
 	JoinThread (get_global_notify_threadid());
 
 	WebcfgInfo("client thread: pthread_join\n");
@@ -229,9 +235,6 @@ void *WebConfigMultipartTask(void *status)
 	WebcfgInfo("event thread: pthread_join\n");
 	JoinThread (get_global_event_threadid());
 
-	WebcfgInfo("event process thread: pthread_join\n");
-	JoinThread (get_global_process_threadid());
-
 	reset_global_eventFlag();
 	set_doc_fail( 0);
 	reset_successDocCount();
@@ -239,6 +242,12 @@ void *WebConfigMultipartTask(void *status)
 	WebcfgInfo("Delete existing tmp list\n");
 	delete_tmp_doc_list();
 	//delete db list also and mp cache, timer struct etc.
+
+	WebcfgInfo("webcfgdb_destroy\n");
+	webcfgdb_destroy (get_global_db_node() );
+
+	WebcfgInfo("multipart_destroy\n");
+	multipart_destroy(get_global_mp());
 
 	WebcfgInfo("B4 pthread_exit\n");
 	pthread_exit(0);

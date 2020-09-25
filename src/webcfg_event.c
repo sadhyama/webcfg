@@ -124,7 +124,7 @@ void initEventHandlingTask()
 
 void* blobEventHandler()
 {
-	pthread_detach(pthread_self());
+	//pthread_detach(pthread_self());
 
 	int ret = 0;
 	char *expired_doc= NULL;
@@ -164,7 +164,7 @@ void* blobEventHandler()
 		}
 		else
 		{
-			WebcfgDebug("Waiting at timer loop of 5s\n");
+			WebcfgInfo("Waiting at timer loop of 5s\n");
 			sleep(5);
 			if (get_global_shutdown())
 			{

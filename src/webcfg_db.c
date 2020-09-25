@@ -241,12 +241,14 @@ void webcfgdb_destroy( webconfig_db_data_t *pm )
 {
 	if( NULL != pm )
 	{
+		WebcfgInfo("webcfgdb_destroy free\n");
 		if( NULL != pm->name )
 		{
-			free( pm->name );
+			WEBCFG_FREE( pm->name );
 		}
-		free( pm );
+		WEBCFG_FREE( pm );
 	}
+	WebcfgInfo("webcfgdb_destroy end\n");
 }
 
 void webcfgdbblob_destroy( blob_struct_t *bd )

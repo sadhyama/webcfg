@@ -167,7 +167,7 @@ void addWebConfgNotifyMsg(char *docname, uint32_t version, char *status, char *e
 //Notify thread function waiting for notify msgs
 void* processWebConfgNotification()
 {
-	pthread_detach(pthread_self());
+	//pthread_detach(pthread_self());
 	char device_id[32] = { '\0' };
 	cJSON *notifyPayload = NULL;
 	char  * stringifiedNotifyPayload = NULL;

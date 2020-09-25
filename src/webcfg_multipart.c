@@ -116,7 +116,6 @@ size_t headr_callback(char *buffer, size_t size, size_t nitems);
 void stripspaces(char *str, char **final_str);
 void createCurlHeader( struct curl_slist *list, struct curl_slist **header_list, int status, char ** trans_uuid);
 void parse_multipart(char *ptr, int no_of_bytes, multipartdocs_t *m);
-void multipart_destroy( multipart_t *m );
 void addToDBList(webconfig_db_data_t *webcfgdb);
 char* generate_trans_uuid();
 WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id);
@@ -1579,21 +1578,24 @@ char* generate_trans_uuid()
 
 void multipart_destroy( multipart_t *m )
 {
+    WebcfgInfo("In multipart_destroy\n");
     if( NULL != m ) {
+	WebcfgInfo("multipart_destroy freeing\n");
         size_t i=0;
         for( i = 0; i < m->entries_count-1; i++ ) {
            if( NULL != m->entries[i].name_space ) {
-                free( m->entries[i].name_space );
+                WEBCFG_FREE( m->entries[i].name_space );
             }
              if( NULL != m->entries[i].data ) {
-                free( m->entries[i].data );
+                WEBCFG_FREE( m->entries[i].data );
             }
         }
         if( NULL != m->entries ) {
-            free( m->entries );
+            WEBCFG_FREE( m->entries );
         }
-        free( m );
+        WEBCFG_FREE( m );
     }
+    WebcfgInfo("multipart_destroy end\n");
 }
 
 void parse_multipart(char *ptr, int no_of_bytes, multipartdocs_t *m)

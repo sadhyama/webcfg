@@ -56,8 +56,8 @@ int wakeFlag = 0;
 char *aker_status = NULL;
 pthread_mutex_t client_mut=PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t client_con=PTHREAD_COND_INITIALIZER;
-pthread_mutex_t svc_mut=PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t svc_con=PTHREAD_COND_INITIALIZER;
+//pthread_mutex_t svc_mut=PTHREAD_MUTEX_INITIALIZER;
+//pthread_cond_t svc_con=PTHREAD_COND_INITIALIZER;
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
 /*----------------------------------------------------------------------------*/
@@ -70,7 +70,7 @@ static void set_global_status(char *status);
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
-pthread_cond_t *get_global_svc_con(void)
+/*pthread_cond_t *get_global_svc_con(void)
 {
     return &svc_con;
 }
@@ -78,7 +78,7 @@ pthread_cond_t *get_global_svc_con(void)
 pthread_mutex_t *get_global_svc_mut(void)
 {
     return &svc_mut;
-}
+}*/
 
 pthread_cond_t *get_global_client_con(void)
 {
@@ -97,10 +97,11 @@ int akerwait__ (unsigned int secs)
 
   clock_gettime(CLOCK_REALTIME, &svc_timer);
   svc_timer.tv_sec += secs;
-  pthread_mutex_lock(&svc_mut);
-  pthread_cond_timedwait (&svc_con, &svc_mut, &svc_timer);
+  pthread_mutex_lock(get_global_sync_mutex());
+  pthread_cond_timedwait (get_global_sync_condition(), get_global_sync_mutex(), &svc_timer);
+  WebcfgInfo("pthread timed out from akerwait\n");
   shutdown_flag = get_global_shutdown();
-  pthread_mutex_unlock (&svc_mut);
+  pthread_mutex_unlock (get_global_sync_mutex());
   return shutdown_flag;
 }
 

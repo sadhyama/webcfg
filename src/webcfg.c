@@ -203,11 +203,11 @@ void *WebConfigMultipartTask(void *status)
 	pthread_cond_signal (get_global_notify_con());
 	pthread_mutex_unlock (get_global_notify_mut());
 
-	pthread_mutex_lock (get_global_svc_mut());
+	/*pthread_mutex_lock (get_global_svc_mut());
 	WebcfgInfo("Trigger svc_con cond signal\n");
 	pthread_cond_signal (get_global_svc_con());
 	WebcfgInfo("After svc_con cond signal\n");
-	pthread_mutex_unlock (get_global_svc_mut());
+	pthread_mutex_unlock (get_global_svc_mut());*/
 
 	//WebcfgInfo("webcfg_instance libparodus_shutdown\n");
 	//libpd_instance_t web_inst = get_webcfg_instance();

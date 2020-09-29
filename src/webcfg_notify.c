@@ -267,12 +267,13 @@ void* processWebConfgNotification()
 				pthread_mutex_unlock (&notify_mut);
 				break;
 			}
-			WebcfgInfo("Before pthread cond wait in notify thread\n");
+			WebcfgDebug("Before pthread cond wait in notify thread\n");
 			pthread_cond_wait(&notify_con, &notify_mut);
 			pthread_mutex_unlock (&notify_mut);
 			WebcfgDebug("mutex unlock in notify thread after cond wait\n");
 		}
 	}
+	WebcfgInfo("End of notify consumer thread\n");
 	return NULL;
 }
 

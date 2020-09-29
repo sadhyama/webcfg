@@ -95,6 +95,7 @@ int akerwait__ (unsigned int secs)
   int shutdown_flag;
   struct timespec svc_timer;
 
+  WebcfgInfo("Inside akerwait__\n");
   clock_gettime(CLOCK_REALTIME, &svc_timer);
   svc_timer.tv_sec += secs;
   pthread_mutex_lock(get_global_sync_mutex());
@@ -372,7 +373,6 @@ AKER_STATUS processAkerSubdoc(webconfig_tmp_data_t *docNode, int akerIndex)
 	}
 	return rv;
 }
-
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
 /*----------------------------------------------------------------------------*/
@@ -406,7 +406,6 @@ static char *get_global_status()
 		if (get_global_shutdown())
 		{
 			WebcfgInfo("g_shutdown in client consumer thread\n");
-			pthread_mutex_unlock (&client_mut);
 			break;
 		}
 		rv = pthread_cond_timedwait(&client_con, &client_mut, &ts);

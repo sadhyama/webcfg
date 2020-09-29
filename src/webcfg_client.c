@@ -71,7 +71,6 @@ pthread_t get_global_client_threadid()
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
 /*----------------------------------------------------------------------------*/
-
 static void webConfigClientReceive()
 {
 	int err = 0;
@@ -190,7 +189,9 @@ void* parodus_receive()
 			}
 		}
 	}
+	WebcfgInfo("B4 libparodus_shutdown\n");
 	libparodus_shutdown(&webcfg_instance);
+	WebcfgInfo("After libparodus_shutdown\n");
 	return 0;
 }
 

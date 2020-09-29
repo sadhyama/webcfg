@@ -1578,9 +1578,7 @@ char* generate_trans_uuid()
 
 void multipart_destroy( multipart_t *m )
 {
-    WebcfgInfo("In multipart_destroy\n");
     if( NULL != m ) {
-	WebcfgInfo("multipart_destroy freeing\n");
         size_t i=0;
         for( i = 0; i < m->entries_count-1; i++ ) {
            if( NULL != m->entries[i].name_space ) {
@@ -1595,7 +1593,6 @@ void multipart_destroy( multipart_t *m )
         }
         WEBCFG_FREE( m );
     }
-    WebcfgInfo("multipart_destroy end\n");
 }
 
 void parse_multipart(char *ptr, int no_of_bytes, multipartdocs_t *m)

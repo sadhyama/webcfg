@@ -164,7 +164,7 @@ void* blobEventHandler()
 		}
 		else
 		{
-			WebcfgInfo("Waiting at timer loop of 5s\n");
+			WebcfgDebug("Waiting at timer loop of 5s\n");
 			sleep(5);
 			if (get_global_shutdown())
 			{
@@ -472,7 +472,7 @@ void* processSubdocEvents()
 				pthread_mutex_unlock (&event_mut);
 				break;
 			}
-			WebcfgInfo("Before pthread cond wait in event consumer thread\n");
+			WebcfgDebug("Before pthread cond wait in event consumer thread\n");
 			pthread_cond_wait(&event_con, &event_mut);
 			pthread_mutex_unlock (&event_mut);
 			WebcfgDebug("mutex unlock in event consumer thread after cond wait\n");

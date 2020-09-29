@@ -201,7 +201,9 @@ void *WebConfigMultipartTask(void *status)
 	WebcfgInfo("Trigger notify cond signal\n");
 	pthread_mutex_lock (get_global_notify_mut());
 	pthread_cond_signal (get_global_notify_con());
+	WebcfgInfo("After notify cond signal\n");
 	pthread_mutex_unlock (get_global_notify_mut());
+	WebcfgInfo("After notify mut unlock\n");
 
 	/*pthread_mutex_lock (get_global_svc_mut());
 	WebcfgInfo("Trigger svc_con cond signal\n");
@@ -242,7 +244,7 @@ void *WebConfigMultipartTask(void *status)
 
 	WebcfgInfo("B4 pthread_exit\n");
 	pthread_exit(0);
-	WebcfgInfo("After pthread_exit\n");
+	WebcfgDebug("After pthread_exit\n");
 	return NULL;
 }
 
@@ -568,7 +570,7 @@ void JoinThread (pthread_t threadId)
 	ret = pthread_join (threadId, NULL);
 	if(ret ==0)
 	{
-		WebcfgInfo("pthread_join returns success, threadId %ld\n", threadId);
+		WebcfgInfo("pthread_join returns success\n");
 	}
 	else
 	{

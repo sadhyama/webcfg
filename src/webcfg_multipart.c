@@ -1578,21 +1578,29 @@ char* generate_trans_uuid()
 
 void multipart_destroy( multipart_t *m )
 {
+	WebcfgInfo("Inside multipart_destroy\n");
     if( NULL != m ) {
+	WebcfgInfo("Inside m!=NULL\n");
         size_t i=0;
+	WebcfgInfo("m->entries_count is %ld\n", m->entries_count);
         for( i = 0; i < m->entries_count-1; i++ ) {
            if( NULL != m->entries[i].name_space ) {
+			WebcfgInfo("free m->entries[%ld].name_space %s\n", i, m->entries[i].name_space);
                 WEBCFG_FREE( m->entries[i].name_space );
             }
              if( NULL != m->entries[i].data ) {
+		WebcfgInfo("free m->entries[i].data\n");
                 WEBCFG_FREE( m->entries[i].data );
             }
         }
         if( NULL != m->entries ) {
+		WebcfgInfo("free m->entries\n");
             WEBCFG_FREE( m->entries );
         }
+	WebcfgInfo("free m\n");
         WEBCFG_FREE( m );
     }
+	WebcfgInfo("End multipart_destroy\n");
 }
 
 void parse_multipart(char *ptr, int no_of_bytes, multipartdocs_t *m)

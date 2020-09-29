@@ -243,8 +243,11 @@ void *WebConfigMultipartTask(void *status)
 	webcfgdb_destroy (get_global_db_node() );
 
 	WebcfgInfo("multipart_destroy\n");
-	multipart_destroy(get_global_mp());
-
+	if(get_global_mp() !=NULL)
+	{
+		WebcfgInfo("Calling multipart_destroy\n");
+		multipart_destroy(get_global_mp());
+	}
 	WebcfgInfo("B4 pthread_exit\n");
 	pthread_exit(0);
 	WebcfgDebug("After pthread_exit\n");

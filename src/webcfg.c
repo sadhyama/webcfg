@@ -188,11 +188,6 @@ void *WebConfigMultipartTask(void *status)
 	}
 
 	/* release all active threads before shutdown */
-	WebcfgInfo("Trigger event cond signal\n");
-	pthread_mutex_lock (get_global_event_mut());
-	pthread_cond_signal (get_global_event_con());
-	pthread_mutex_unlock (get_global_event_mut());
-
 	WebcfgInfo("Trigger client cond signal\n");
 	pthread_mutex_lock (get_global_client_mut());
 	pthread_cond_signal (get_global_client_con());
@@ -215,18 +210,26 @@ void *WebConfigMultipartTask(void *status)
 	//libpd_instance_t web_inst = get_webcfg_instance();
 	//libparodus_shutdown(&web_inst);
 
+	WebcfgInfo("get_global_eventFlag is %d\n", get_global_eventFlag());
+	if(get_global_eventFlag())
+	{
+		WebcfgInfo("Trigger event cond signal\n");
+		pthread_mutex_lock (get_global_event_mut());
+		pthread_cond_signal (get_global_event_con());
+		pthread_mutex_unlock (get_global_event_mut());
 
-	WebcfgInfo("event process thread: pthread_join\n");
-	JoinThread (get_global_process_threadid());
+		WebcfgInfo("event process thread: pthread_join\n");
+		JoinThread (get_global_process_threadid());
+
+		WebcfgInfo("event thread: pthread_join\n");
+		JoinThread (get_global_event_threadid());
+	}
 
 	WebcfgInfo("notify thread: pthread_join\n");
 	JoinThread (get_global_notify_threadid());
 
 	WebcfgInfo("client thread: pthread_join\n");
 	JoinThread (get_global_client_threadid());
-
-	WebcfgInfo("event thread: pthread_join\n");
-	JoinThread (get_global_event_threadid());
 
 	reset_global_eventFlag();
 	set_doc_fail( 0);

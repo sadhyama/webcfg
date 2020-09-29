@@ -574,6 +574,6 @@ void JoinThread (pthread_t threadId)
 	}
 	else
 	{
-		WebcfgError("Error joining thread threadId %ld\n", threadId);
+		WebcfgError("Error joining thread threadId\n");
 	}
 }

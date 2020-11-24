@@ -45,6 +45,8 @@
 #define TEST_FILE_LOCATION		"/tmp/multipart.bin"
 #endif
 #endif
+
+#define MAX_RANDOM_TIME			7200				//2hrs in seconds
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
 /*----------------------------------------------------------------------------*/
@@ -56,6 +58,8 @@
 pthread_mutex_t sync_mutex=PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t sync_condition=PTHREAD_COND_INITIALIZER;
 bool g_shutdown  = false;
+bool g_secondary_docs = false;
+static long long g_rand_time = 0;
 #ifdef MULTIPART_UTILITY
 static int g_testfile = 0;
 #endif
@@ -91,6 +95,8 @@ void *WebConfigMultipartTask(void *status)
 	int forced_sync=0;
         int Status = 0;
 	int retry_flag = 0;
+	int secondary_doc_sync = 0;
+	int wait_flag = 1;
 	struct timespec ts;
 	Status = (unsigned long)status;
 
@@ -105,6 +111,8 @@ void *WebConfigMultipartTask(void *status)
 
 	processWebconfgSync((int)Status);
 
+	initRandomTimer();
+
 	while(1)
 	{
 		if(forced_sync)
@@ -116,7 +124,19 @@ void *WebConfigMultipartTask(void *status)
 			setForceSync("", "", 0);
 		}
 
+
 		pthread_mutex_lock (&sync_mutex);
+
+		if(wait_flag && secondary_doc_sync == 0)
+		{
+			if(checkRandomTimer())
+			{
+				WebcfgDebug("Triggered Supplementary doc boot sync\n");
+				secondary_doc_sync = 1;
+				processWebconfgSync((int)Status);
+				set_global_secondary_docs(false);
+			}
+		}
 
 		if (g_shutdown)
 		{
@@ -147,6 +167,7 @@ void *WebConfigMultipartTask(void *status)
 			WebcfgDebug("Inside the timedout condition\n");
 			set_doc_fail(0);
 			failedDocsRetry();
+			wait_flag = 1;
 			WebcfgDebug("After the failedDocsRetry\n");
 		}
 		else if(!rv && !g_shutdown)
@@ -162,6 +183,7 @@ void *WebConfigMultipartTask(void *status)
 				if((ForceSyncDoc != NULL) && strlen(ForceSyncDoc)>0)
 				{
 					forced_sync = 1;
+					wait_flag = 0;
 					WebcfgDebug("Received signal interrupt to Force Sync\n");
 					WEBCFG_FREE(ForceSyncDoc);
 					WEBCFG_FREE(ForceSyncTransID);
@@ -252,6 +274,26 @@ bool get_global_shutdown()
 void set_global_shutdown(bool shutdown)
 {
     g_shutdown = shutdown;
+}
+
+bool get_global_secondary_docs()
+{
+    return g_secondary_docs;
+}
+
+void set_global_secondary_docs(bool secondary_docs)
+{
+    g_secondary_docs = secondary_docs;
+}
+
+long long get_global_rand_time()
+{
+    return g_rand_time;
+}
+
+void set_global_rand_time(long long value)
+{
+    g_rand_time = value;
 }
 
 #ifdef MULTIPART_UTILITY
@@ -562,4 +604,38 @@ void JoinThread (pthread_t threadId)
 	{
 		WebcfgError("Error joining thread threadId\n");
 	}
+}
+
+
+void initRandomTimer()
+{
+	int time_val = 0;
+	long long rand_time = 0;
+	struct timespec rt;
+
+        srand(time(0));
+        time_val = rand() % (MAX_RANDOM_TIME + 1) ;
+	clock_gettime(CLOCK_REALTIME, &rt);
+	WebcfgDebug("currrent time is %lld\n",(long long)rt.tv_sec);
+	rand_time = rt.tv_sec+time_val;
+	WebcfgDebug("rand_time is %lld\n",rand_time);
+	set_global_rand_time(rand_time);
+}
+
+int checkRandomTimer()
+{
+	long long cur_time = 0;
+	struct timespec rt;
+
+	clock_gettime(CLOCK_REALTIME, &rt);
+	cur_time = rt.tv_sec;
+	if(cur_time >= get_global_rand_time())
+	{
+		set_global_secondary_docs(true);
+		WebcfgDebug("Rand time is equal to current time\n");
+		return 1;
+	}
+
+	return 0;
+
 }

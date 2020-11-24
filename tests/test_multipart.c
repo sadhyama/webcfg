@@ -160,6 +160,9 @@ void test_multipart()
 		printf("\nProvide config URL as argument\n");
 		return;
 	}
+	printf("\n");
+	initRandomTimer();
+	set_global_secondary_docs(true);
 	initWebcfgProperties(WEBCFG_PROPERTIES_FILE);
 	initWebConfigNotifyTask();
 	processWebcfgEvents();

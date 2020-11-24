@@ -1291,7 +1291,6 @@ void createCurlHeader( struct curl_slist *list, struct curl_slist **header_list,
 	WebcfgInfo("Start of createCurlheader\n");
 	//Fetch auth JWT token from cloud.
 	getAuthToken();
-
 	WebcfgDebug("get_global_auth_token() is %s\n", get_global_auth_token());
 
 	auth_header = (char *) malloc(sizeof(char)*MAX_HEADER_LEN);
@@ -1302,15 +1301,19 @@ void createCurlHeader( struct curl_slist *list, struct curl_slist **header_list,
 		WEBCFG_FREE(auth_header);
 	}
 
-	version_header = (char *) malloc(sizeof(char)*MAX_BUF_SIZE);
-	if(version_header !=NULL)
+	if(!get_global_secondary_docs())
 	{
-		refreshConfigVersionList(version, 0);
-		snprintf(version_header, MAX_BUF_SIZE, "IF-NONE-MATCH:%s", ((strlen(version)!=0) ? version : "0"));
-		WebcfgInfo("version_header formed %s\n", version_header);
-		list = curl_slist_append(list, version_header);
-		WEBCFG_FREE(version_header);
+		version_header = (char *) malloc(sizeof(char)*MAX_BUF_SIZE);
+		if(version_header !=NULL)
+		{
+			refreshConfigVersionList(version, 0);
+			snprintf(version_header, MAX_BUF_SIZE, "IF-NONE-MATCH:%s", ((strlen(version)!=0) ? version : "0"));
+			WebcfgInfo("version_header formed %s\n", version_header);
+			list = curl_slist_append(list, version_header);
+			WEBCFG_FREE(version_header);
+		}
 	}
+
 	list = curl_slist_append(list, "Accept: application/msgpack");
 
 	schema_header = (char *) malloc(sizeof(char)*MAX_BUF_SIZE);
@@ -1322,82 +1325,85 @@ void createCurlHeader( struct curl_slist *list, struct curl_slist **header_list,
 		WEBCFG_FREE(schema_header);
 	}
 
-
-	if(supportedVersion_header == NULL)
+	if(!get_global_secondary_docs())
 	{
-		supportedVersion = getsupportedVersion();
-
-		if(supportedVersion !=NULL)
+		if(supportedVersion_header == NULL)
 		{
-			supported_version_size = strlen(supportedVersion)+strlen("X-System-Schema-Version: ");
-			supportedVersion_header = (char *) malloc(supported_version_size+1);
-			memset(supportedVersion_header,0,supported_version_size+1);
-			WebcfgDebug("supportedVersion fetched is %s\n", supportedVersion);
-			snprintf(supportedVersion_header, supported_version_size+1, "X-System-Schema-Version: %s", supportedVersion);
+			supportedVersion = getsupportedVersion();
+
+			if(supportedVersion !=NULL)
+			{
+				supported_version_size = strlen(supportedVersion)+strlen("X-System-Schema-Version: ");
+				supportedVersion_header = (char *) malloc(supported_version_size+1);
+				memset(supportedVersion_header,0,supported_version_size+1);
+				WebcfgDebug("supportedVersion fetched is %s\n", supportedVersion);
+				snprintf(supportedVersion_header, supported_version_size+1, "X-System-Schema-Version: %s", supportedVersion);
+				WebcfgInfo("supportedVersion_header formed %s\n", supportedVersion_header);
+				list = curl_slist_append(list, supportedVersion_header);
+			}
+			else
+			{
+				WebcfgInfo("supportedVersion fetched is NULL\n");
+			}
+		}
+		else
+		{
 			WebcfgInfo("supportedVersion_header formed %s\n", supportedVersion_header);
 			list = curl_slist_append(list, supportedVersion_header);
 		}
+
+		if(supportedDocs_header == NULL)
+		{
+			supportedDocs = getsupportedDocs();
+
+			if(supportedDocs !=NULL)
+			{
+				supported_doc_size = strlen(supportedDocs)+strlen("X-System-Supported-Docs: ");
+				supportedDocs_header = (char *) malloc(supported_doc_size+1);
+				memset(supportedDocs_header,0,supported_doc_size+1);
+				WebcfgDebug("supportedDocs fetched is %s\n", supportedDocs);
+				snprintf(supportedDocs_header, supported_doc_size+1, "X-System-Supported-Docs: %s", supportedDocs);
+				WebcfgInfo("supportedDocs_header formed %s\n", supportedDocs_header);
+				list = curl_slist_append(list, supportedDocs_header);
+			}
+			else
+			{
+				WebcfgInfo("SupportedDocs fetched is NULL\n");
+			}
+		}
 		else
 		{
-			WebcfgInfo("supportedVersion fetched is NULL\n");
-		}
-	}
-	else
-	{
-		WebcfgInfo("supportedVersion_header formed %s\n", supportedVersion_header);
-		list = curl_slist_append(list, supportedVersion_header);
-	}
-
-	if(supportedDocs_header == NULL)
-	{
-		supportedDocs = getsupportedDocs();
-
-		if(supportedDocs !=NULL)
-		{
-			supported_doc_size = strlen(supportedDocs)+strlen("X-System-Supported-Docs: ");
-			supportedDocs_header = (char *) malloc(supported_doc_size+1);
-			memset(supportedDocs_header,0,supported_doc_size+1);
-			WebcfgDebug("supportedDocs fetched is %s\n", supportedDocs);
-			snprintf(supportedDocs_header, supported_doc_size+1, "X-System-Supported-Docs: %s", supportedDocs);
 			WebcfgInfo("supportedDocs_header formed %s\n", supportedDocs_header);
 			list = curl_slist_append(list, supportedDocs_header);
 		}
-		else
-		{
-			WebcfgInfo("SupportedDocs fetched is NULL\n");
-		}
 	}
 	else
 	{
-		WebcfgInfo("supportedDocs_header formed %s\n", supportedDocs_header);
-		list = curl_slist_append(list, supportedDocs_header);
-	}
-
-	if(supplementaryDocs_header == NULL)
-	{
-		supplementaryDocs = getsupplementaryDocs();
-
-		if(supplementaryDocs !=NULL)
+		if(supplementaryDocs_header == NULL)
 		{
-			supplementary_docs_size = strlen(supplementaryDocs)+strlen("X-System-SupplementaryService-Sync: ");
-			supplementaryDocs_header = (char *) malloc(supplementary_docs_size+1);
-			memset(supplementaryDocs_header,0,supplementary_docs_size+1);
-			WebcfgDebug("supplementaryDocs fetched is %s\n", supplementaryDocs);
-			snprintf(supplementaryDocs_header, supplementary_docs_size+1, "X-System-SupplementaryService-Sync: %s", supplementaryDocs);
+			supplementaryDocs = getsupplementaryDocs();
+
+			if(supplementaryDocs !=NULL)
+			{
+				supplementary_docs_size = strlen(supplementaryDocs)+strlen("X-System-SupplementaryService-Sync: ");
+				supplementaryDocs_header = (char *) malloc(supplementary_docs_size+1);
+				memset(supplementaryDocs_header,0,supplementary_docs_size+1);
+				WebcfgDebug("supplementaryDocs fetched is %s\n", supplementaryDocs);
+				snprintf(supplementaryDocs_header, supplementary_docs_size+1, "X-System-SupplementaryService-Sync: %s", supplementaryDocs);
+				WebcfgInfo("supplementaryDocs_header formed %s\n", supplementaryDocs_header);
+				list = curl_slist_append(list, supplementaryDocs_header);
+			}
+			else
+			{
+				WebcfgInfo("supplementaryDocs fetched is NULL\n");
+			}
+		}
+		else
+		{
 			WebcfgInfo("supplementaryDocs_header formed %s\n", supplementaryDocs_header);
 			list = curl_slist_append(list, supplementaryDocs_header);
 		}
-		else
-		{
-			WebcfgInfo("supplementaryDocs fetched is NULL\n");
-		}
 	}
-	else
-	{
-		WebcfgInfo("supplementaryDocs_header formed %s\n", supplementaryDocs_header);
-		list = curl_slist_append(list, supplementaryDocs_header);
-	}
-
 
 	if(strlen(g_bootTime) ==0)
 	{

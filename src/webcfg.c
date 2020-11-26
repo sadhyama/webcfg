@@ -46,7 +46,8 @@
 #endif
 #endif
 
-#define MAX_RANDOM_TIME			7200				//2hrs in seconds
+//#define MAX_RANDOM_TIME			7200				//2hrs in seconds
+#define MAX_RANDOM_TIME			300					//For test purpose 300 seconds
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
 /*----------------------------------------------------------------------------*/
@@ -128,6 +129,8 @@ void *WebConfigMultipartTask(void *status)
 		}
 
 		//Supplementary doc bootup sync with cloud based on the random timer calculated.
+		WebcfgInfo("The value of wait_flag is %d\n", wait_flag);
+		WebcfgInfo("The value of secondary_doc_sync is %d\n", secondary_doc_sync);
 		if(!wait_flag)
 		{
 			if(secondary_doc_sync == 0 && checkRandomTimer())
@@ -144,10 +147,12 @@ void *WebConfigMultipartTask(void *status)
 		if (secondary_doc_sync == 0)
 		{
 			value =  secondarySyncSeconds();
+			WebcfgInfo("The secondarySyncSeconds value is %d\n",value);
 			gettimeofday(&tp, NULL);
 			ts.tv_sec = tp.tv_sec;
 			ts.tv_nsec = tp.tv_usec * 1000;
 			ts.tv_sec += value;
+			WebcfgInfo("The current time wait is %lld\n",(long long)ts.tv_sec);
 		}
 
 		if (g_shutdown)
@@ -167,7 +172,7 @@ void *WebConfigMultipartTask(void *status)
 		if (retry_flag == 1 || secondary_doc_sync == 0) //TODO: add maintenace window check also here.
 		{
 
-			WebcfgDebug("B4 sync_condition pthread_cond_timedwait\n");
+			WebcfgInfo("B4 sync_condition pthread_cond_timedwait\n");
 			rv = pthread_cond_timedwait(&sync_condition, &sync_mutex, &ts);
 			WebcfgInfo("The retry flag value is %d\n", get_doc_fail());
 			WebcfgInfo("The value of rv %d\n", rv);
@@ -185,7 +190,7 @@ void *WebConfigMultipartTask(void *status)
 				WebcfgInfo("Inside failedDocsRetry\n");
 				set_doc_fail(0);
 				failedDocsRetry();
-				WebcfgDebug("After the failedDocsRetry\n");
+				WebcfgInfo("After the failedDocsRetry\n");
 			}
 			else
 			{
@@ -639,10 +644,11 @@ void initRandomTimer()
 
         srand(time(0));
         time_val = rand() % (MAX_RANDOM_TIME + 1) ;
+	WebcfgInfo("The value of time_val is %d\n",time_val);
 	clock_gettime(CLOCK_REALTIME, &rt);
-	WebcfgDebug("currrent time is %lld\n",(long long)rt.tv_sec);
+	WebcfgInfo("current time is %lld\n",(long long)rt.tv_sec);
 	rand_time = rt.tv_sec+time_val;
-	WebcfgDebug("rand_time is %lld\n",rand_time);
+	WebcfgInfo("rand_time is %lld\n",rand_time);
 	set_global_rand_time(rand_time);
 	
 }
@@ -654,10 +660,12 @@ int checkRandomTimer()
 
 	clock_gettime(CLOCK_REALTIME, &rt);
 	cur_time = rt.tv_sec;
+	WebcfgInfo("The current time in checkRandomTimer is %lld\n",cur_time);
+	WebcfgInfo("The current time in checkRandomTimer is %lld\n",get_global_rand_time());
 	if(cur_time >= get_global_rand_time())
 	{
 		set_global_secondary_docs(true);
-		WebcfgDebug("Rand time is equal to current time\n");
+		WebcfgInfo("Rand time is equal to current time\n");
 		return 1;
 	}
 	return 0;
@@ -672,8 +680,10 @@ int secondarySyncSeconds()
 	clock_gettime(CLOCK_REALTIME, &ct);
 
 	current_time = ct.tv_sec;
-	WebcfgDebug("The current time in %s is %lld\n",__FUNCTION__,current_time);
 	sync_secs =  get_global_rand_time() - current_time;
+	WebcfgInfo("The current time in secondarySyncSeconds is %lld\n",current_time);
+	WebcfgInfo("The current time in secondarySyncSeconds is %lld\n",get_global_rand_time());
+	WebcfgInfo("The Sync Secons is %d\n", sync_secs);
 	if (sync_secs > 0)
 	{
 		return sync_secs;

@@ -114,7 +114,7 @@ void *WebConfigMultipartTask(void *status)
 
 	processWebconfgSync((int)Status);
 
-	value = initRandomTimer();
+	initRandomTimer();
 
 	while(1)
 	{
@@ -143,6 +143,7 @@ void *WebConfigMultipartTask(void *status)
 
 		if (secondary_doc_sync == 0)
 		{
+			value =  secondarySyncSeconds();
 			gettimeofday(&tp, NULL);
 			ts.tv_sec = tp.tv_sec;
 			ts.tv_nsec = tp.tv_usec * 1000;
@@ -630,7 +631,7 @@ void JoinThread (pthread_t threadId)
 }
 
 
-long long initRandomTimer()
+void initRandomTimer()
 {
 	int time_val = 0;
 	long long rand_time = 0;
@@ -643,7 +644,7 @@ long long initRandomTimer()
 	rand_time = rt.tv_sec+time_val;
 	WebcfgDebug("rand_time is %lld\n",rand_time);
 	set_global_rand_time(rand_time);
-	return rand_time;
+	
 }
 
 int checkRandomTimer()
@@ -659,7 +660,26 @@ int checkRandomTimer()
 		WebcfgDebug("Rand time is equal to current time\n");
 		return 1;
 	}
-
 	return 0;
 
+}
+
+int secondarySyncSeconds()
+{
+	struct timespec ct;
+	int sync_secs = 0;
+	long long current_time = 0;
+	clock_gettime(CLOCK_REALTIME, &ct);
+
+	current_time = ct.tv_sec;
+	WebcfgDebug("The current time in %s is %lld\n",__FUNCTION__,current_time);
+	sync_secs =  get_global_rand_time() - current_time;
+	if (sync_secs > 0)
+	{
+		return sync_secs;
+	}
+	else
+	{
+		return 0;
+	}
 }

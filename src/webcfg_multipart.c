@@ -62,6 +62,8 @@ static char g_FirmwareVersion[64]={'\0'};
 static char g_bootTime[64]={'\0'};
 static char g_productClass[64]={'\0'};
 static char g_ModelName[64]={'\0'};
+static char g_PartnerID[64]={'\0'};
+static char g_AccountID[64]={'\0'};
 char g_RebootReason[64]={'\0'};
 static char g_transID[64]={'\0'};
 static char * g_contentLen = NULL;
@@ -1276,6 +1278,9 @@ void createCurlHeader( struct curl_slist *list, struct curl_slist **header_list,
         char *productClass = NULL, *productClass_header = NULL;
 	char *ModelName = NULL, *ModelName_header = NULL;
 	char *systemReadyTime = NULL, *systemReadyTime_header=NULL;
+	char *telemetryVersion_header = NULL;
+	char *PartnerID = NULL, *PartnerID_header = NULL;
+	char *AccountID = NULL, *AccountID_header = NULL;
 	struct timespec cTime;
 	char currentTime[32];
 	char *currentTime_header=NULL;
@@ -1606,6 +1611,74 @@ void createCurlHeader( struct curl_slist *list, struct curl_slist **header_list,
 	{
 		WebcfgError("Failed to get ModelName\n");
 	}
+
+	//Addtional headers for telemetry sync
+	if(get_global_secondary_docs())
+	{
+		telemetryVersion_header = (char *) malloc(sizeof(char)*MAX_BUF_SIZE);
+		if(telemetryVersion_header !=NULL)
+		{
+			snprintf(telemetryVersion_header, MAX_BUF_SIZE, "X-System-Telemetry-Profile-Version: %s", "2.0");
+			WebcfgInfo("telemetryVersion_header formed %s\n", telemetryVersion_header);
+			list = curl_slist_append(list, telemetryVersion_header);
+			WEBCFG_FREE(telemetryVersion_header);
+		}
+
+		if(strlen(g_PartnerID) ==0)
+		{
+			PartnerID = getPartnerID();
+			if(PartnerID !=NULL)
+			{
+			       strncpy(g_PartnerID, PartnerID, sizeof(g_PartnerID)-1);
+			       WebcfgDebug("g_PartnerID fetched is %s\n", g_PartnerID);
+			       WEBCFG_FREE(PartnerID);
+			}
+		}
+
+		if(strlen(g_PartnerID))
+		{
+			PartnerID_header = (char *) malloc(sizeof(char)*MAX_BUF_SIZE);
+			if(PartnerID_header !=NULL)
+			{
+				snprintf(PartnerID_header, MAX_BUF_SIZE, "X-System-PartnerID: %s", g_PartnerID);
+				WebcfgInfo("PartnerID_header formed %s\n", PartnerID_header);
+				list = curl_slist_append(list, PartnerID_header);
+				WEBCFG_FREE(PartnerID_header);
+			}
+		}
+		else
+		{
+			WebcfgError("Failed to get PartnerID\n");
+		}
+
+		if(strlen(g_AccountID) ==0)
+		{
+			AccountID = getAccountID();
+			if(AccountID !=NULL)
+			{
+			       strncpy(g_AccountID, AccountID, sizeof(g_AccountID)-1);
+			       WebcfgDebug("g_AccountID fetched is %s\n", g_AccountID);
+			       WEBCFG_FREE(AccountID);
+			}
+		}
+
+		if(strlen(g_AccountID))
+		{
+			AccountID_header = (char *) malloc(sizeof(char)*MAX_BUF_SIZE);
+			if(AccountID_header !=NULL)
+			{
+				snprintf(AccountID_header, MAX_BUF_SIZE, "X-System-AccountID: %s", g_AccountID);
+				WebcfgInfo("AccountID_header formed %s\n", AccountID_header);
+				list = curl_slist_append(list, AccountID_header);
+				WEBCFG_FREE(AccountID_header);
+			}
+		}
+		else
+		{
+			WebcfgError("Failed to get AccountID\n");
+		}
+	}
+
 	*header_list = list;
 }
 

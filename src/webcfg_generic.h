@@ -39,6 +39,8 @@ char * getDeviceBootTime();
 char * getSerialNumber();
 char * getProductClass();
 char * getModelName();
+char * getPartnerID();
+char * getAccountID();
 char * getConnClientParamName();
 char * getFirmwareVersion();
 char* get_deviceMAC();

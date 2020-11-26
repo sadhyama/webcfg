@@ -77,7 +77,7 @@ long timeVal_Diff(struct timespec *starttime, struct timespec *finishtime);
 void initWebConfigClient();
 pthread_t get_global_client_threadid();
 void JoinThread (pthread_t threadId);
-void initRandomTimer();
+long long initRandomTimer();
 int checkRandomTimer();
 bool check_rand_time();
 bool get_global_secondary_docs();

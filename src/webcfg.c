@@ -97,7 +97,10 @@ void *WebConfigMultipartTask(void *status)
 	int retry_flag = 0;
 	int secondary_doc_sync = 0;
 	int wait_flag = 1;
+	int value = 0;
 	struct timespec ts;
+	struct timeval tp;
+	time_t t;
 	Status = (unsigned long)status;
 
 	initWebcfgProperties(WEBCFG_PROPERTIES_FILE);
@@ -111,7 +114,7 @@ void *WebConfigMultipartTask(void *status)
 
 	processWebconfgSync((int)Status);
 
-	initRandomTimer();
+	value = initRandomTimer();
 
 	while(1)
 	{
@@ -124,18 +127,26 @@ void *WebConfigMultipartTask(void *status)
 			setForceSync("", "", 0);
 		}
 
-
-		pthread_mutex_lock (&sync_mutex);
-
-		if(wait_flag && secondary_doc_sync == 0)
+		//Supplementary doc bootup sync with cloud based on the random timer calculated.
+		if(!wait_flag)
 		{
-			if(checkRandomTimer())
+			if(secondary_doc_sync == 0 && checkRandomTimer())
 			{
-				WebcfgDebug("Triggered Supplementary doc boot sync\n");
+				WebcfgInfo("Triggered Supplementary doc boot sync\n");
 				secondary_doc_sync = 1;
 				processWebconfgSync((int)Status);
 				set_global_secondary_docs(false);
 			}
+		}
+
+		pthread_mutex_lock (&sync_mutex);
+
+		if (secondary_doc_sync == 0)
+		{
+			gettimeofday(&tp, NULL);
+			ts.tv_sec = tp.tv_sec;
+			ts.tv_nsec = tp.tv_usec * 1000;
+			ts.tv_sec += value;
 		}
 
 		if (g_shutdown)
@@ -151,6 +162,9 @@ void *WebConfigMultipartTask(void *status)
 		{
 			clock_gettime(CLOCK_REALTIME, &ts);
 			ts.tv_sec += 900;
+		}
+		if (retry_flag == 1 || secondary_doc_sync == 0) //TODO: add maintenace window check also here.
+		{
 
 			WebcfgDebug("B4 sync_condition pthread_cond_timedwait\n");
 			rv = pthread_cond_timedwait(&sync_condition, &sync_mutex, &ts);
@@ -162,13 +176,22 @@ void *WebConfigMultipartTask(void *status)
 			rv = pthread_cond_wait(&sync_condition, &sync_mutex);
 		}
 
-		if(rv == ETIMEDOUT && get_doc_fail() == 1)
+		if(rv == ETIMEDOUT && !g_shutdown)
 		{
-			WebcfgDebug("Inside the timedout condition\n");
-			set_doc_fail(0);
-			failedDocsRetry();
-			wait_flag = 1;
-			WebcfgDebug("After the failedDocsRetry\n");
+			WebcfgInfo("Inside the timedout condition\n");
+			if( get_doc_fail() == 1)
+			{
+				WebcfgInfo("Inside failedDocsRetry\n");
+				set_doc_fail(0);
+				failedDocsRetry();
+				WebcfgDebug("After the failedDocsRetry\n");
+			}
+			else
+			{
+				time(&t);
+				wait_flag = 0;
+				WebcfgInfo("Supplimentary Sync Interval %d sec and syncing at %s\n",value,ctime(&t));
+			}
 		}
 		else if(!rv && !g_shutdown)
 		{
@@ -183,7 +206,7 @@ void *WebConfigMultipartTask(void *status)
 				if((ForceSyncDoc != NULL) && strlen(ForceSyncDoc)>0)
 				{
 					forced_sync = 1;
-					wait_flag = 0;
+					wait_flag = 1;
 					WebcfgDebug("Received signal interrupt to Force Sync\n");
 					WEBCFG_FREE(ForceSyncDoc);
 					WEBCFG_FREE(ForceSyncTransID);
@@ -607,7 +630,7 @@ void JoinThread (pthread_t threadId)
 }
 
 
-void initRandomTimer()
+long long initRandomTimer()
 {
 	int time_val = 0;
 	long long rand_time = 0;
@@ -620,6 +643,7 @@ void initRandomTimer()
 	rand_time = rt.tv_sec+time_val;
 	WebcfgDebug("rand_time is %lld\n",rand_time);
 	set_global_rand_time(rand_time);
+	return rand_time;
 }
 
 int checkRandomTimer()

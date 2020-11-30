@@ -64,12 +64,13 @@ static long long g_rand_time = 0;
 #ifdef MULTIPART_UTILITY
 static int g_testfile = 0;
 #endif
+static char timebuf[80] = {'\0'};;
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
 /*----------------------------------------------------------------------------*/
 void *WebConfigMultipartTask(void *status);
 int handlehttpResponse(long response_code, char *webConfigData, int retry_count, char* transaction_uuid, char* ct, size_t dataSize);
-void printTime(long long time);
+char* printTime(long long time);
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
@@ -153,8 +154,7 @@ void *WebConfigMultipartTask(void *status)
 			ts.tv_sec = tp.tv_sec;
 			ts.tv_nsec = tp.tv_usec * 1000;
 			ts.tv_sec += value;
-			WebcfgInfo("The current time wait is %lld\n",(long long)ts.tv_sec);
-			printTime((long long)ts.tv_sec);
+			WebcfgInfo("The current time wait is %lld at %s\n",(long long)ts.tv_sec, printTime((long long)ts.tv_sec));
 		}
 
 		if (g_shutdown)
@@ -165,11 +165,12 @@ void *WebConfigMultipartTask(void *status)
 		}
 
 		retry_flag = get_doc_fail();
-		WebcfgDebug("The retry flag value is %d\n", retry_flag);
+		WebcfgInfo("The retry flag value is %d\n", retry_flag);
 		if (retry_flag == 1)
 		{
 			clock_gettime(CLOCK_REALTIME, &ts);
-			ts.tv_sec += 900;
+			//ts.tv_sec += 900;
+			ts.tv_sec += 180; //reducing time for testing purpose.
 		}
 		if (retry_flag == 1 || secondary_doc_sync == 0) //TODO: add maintenace window check also here.
 		{
@@ -215,7 +216,7 @@ void *WebConfigMultipartTask(void *status)
 				{
 					forced_sync = 1;
 					wait_flag = 1;
-					WebcfgDebug("Received signal interrupt to Force Sync\n");
+					WebcfgInfo("Received signal interrupt to Force Sync\n");
 					WEBCFG_FREE(ForceSyncDoc);
 					WEBCFG_FREE(ForceSyncTransID);
 				}
@@ -650,8 +651,7 @@ void initRandomTimer()
 	clock_gettime(CLOCK_REALTIME, &rt);
 	WebcfgInfo("current time is %lld\n",(long long)rt.tv_sec);
 	rand_time = rt.tv_sec+time_val;
-	WebcfgInfo("rand_time is %lld\n",rand_time);
-	printTime(rand_time);
+	WebcfgInfo("rand_time is %lld at %s\n",rand_time, printTime(rand_time));
 	set_global_rand_time(rand_time);
 	
 }
@@ -663,9 +663,8 @@ int checkRandomTimer()
 
 	clock_gettime(CLOCK_REALTIME, &rt);
 	cur_time = rt.tv_sec;
-	WebcfgInfo("The current time in checkRandomTimer is %lld\n",cur_time);
-	printTime(cur_time);
-	WebcfgInfo("The current time in checkRandomTimer is %lld\n",get_global_rand_time());
+	WebcfgInfo("The current time in checkRandomTimer is %lld at %s\n",cur_time, printTime(cur_time));
+	WebcfgInfo("The rand time in checkRandomTimer is %lld\n",get_global_rand_time());
 	if(cur_time >= get_global_rand_time())
 	{
 		set_global_secondary_docs(true);
@@ -685,9 +684,8 @@ int secondarySyncSeconds()
 
 	current_time = ct.tv_sec;
 	sync_secs =  get_global_rand_time() - current_time;
-	WebcfgInfo("The current time in secondarySyncSeconds is %lld\n",current_time);
-	printTime(current_time);
-	WebcfgInfo("The current time in secondarySyncSeconds is %lld\n",get_global_rand_time());
+	WebcfgInfo("The current time in secondarySyncSeconds is %lld at %s\n",current_time, printTime(current_time));
+	WebcfgInfo("The rand time in secondarySyncSeconds is %lld\n",get_global_rand_time());
 	WebcfgInfo("The Sync Secons is %d\n", sync_secs);
 	if (sync_secs > 0)
 	{
@@ -699,14 +697,15 @@ int secondarySyncSeconds()
 	}
 }
 
-void printTime(long long time)
+char* printTime(long long time)
 {
 	struct tm  ts;
-	char       buf[80];
+	//char       buf[80];
 
-	// Format time, "ddd yyyy-mm-dd hh:mm:ss zzz"
+	// Format time, "ddd yymmdd hh:mm:ss zzz"
 	time_t rawtime = time;
 	ts = *localtime(&rawtime);
-	strftime(buf, sizeof(buf), "%a %Y-%m-%d %H:%M:%S", &ts);
-	WebcfgInfo("The time in readable format %s\n", buf);
+	strftime(timebuf, sizeof(timebuf), "%a %y%m%d %H:%M:%S", &ts);
+	//WebcfgInfo("The time in readable format %s\n", buf);
+	return timebuf;
 }

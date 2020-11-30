@@ -69,6 +69,7 @@ static int g_testfile = 0;
 /*----------------------------------------------------------------------------*/
 void *WebConfigMultipartTask(void *status);
 int handlehttpResponse(long response_code, char *webConfigData, int retry_count, char* transaction_uuid, char* ct, size_t dataSize);
+void printTime(long long time);
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
@@ -121,9 +122,9 @@ void *WebConfigMultipartTask(void *status)
 	{
 		if(forced_sync)
 		{
-			WebcfgDebug("Triggered Forced sync\n");
+			WebcfgInfo("Triggered Forced sync\n");
 			processWebconfgSync((int)Status);
-			WebcfgDebug("reset forced_sync after sync\n");
+			WebcfgInfo("reset forced_sync after sync\n");
 			forced_sync = 0;
 			setForceSync("", "", 0);
 		}
@@ -153,6 +154,7 @@ void *WebConfigMultipartTask(void *status)
 			ts.tv_nsec = tp.tv_usec * 1000;
 			ts.tv_sec += value;
 			WebcfgInfo("The current time wait is %lld\n",(long long)ts.tv_sec);
+			printTime((long long)ts.tv_sec);
 		}
 
 		if (g_shutdown)
@@ -206,7 +208,7 @@ void *WebConfigMultipartTask(void *status)
 
 			// Identify ForceSync based on docname
 			getForceSync(&ForceSyncDoc, &ForceSyncTransID);
-			WebcfgDebug("ForceSyncDoc %s ForceSyncTransID. %s\n", ForceSyncDoc, ForceSyncTransID);
+			WebcfgInfo("ForceSyncDoc %s ForceSyncTransID. %s\n", ForceSyncDoc, ForceSyncTransID);
 			if(ForceSyncTransID !=NULL)
 			{
 				if((ForceSyncDoc != NULL) && strlen(ForceSyncDoc)>0)
@@ -224,7 +226,7 @@ void *WebConfigMultipartTask(void *status)
 				}
 			}
 
-			WebcfgDebug("forced_sync is %d\n", forced_sync);
+			WebcfgInfo("forced_sync is %d\n", forced_sync);
 		}
 		else if(g_shutdown)
 		{
@@ -649,6 +651,7 @@ void initRandomTimer()
 	WebcfgInfo("current time is %lld\n",(long long)rt.tv_sec);
 	rand_time = rt.tv_sec+time_val;
 	WebcfgInfo("rand_time is %lld\n",rand_time);
+	printTime(rand_time);
 	set_global_rand_time(rand_time);
 	
 }
@@ -661,6 +664,7 @@ int checkRandomTimer()
 	clock_gettime(CLOCK_REALTIME, &rt);
 	cur_time = rt.tv_sec;
 	WebcfgInfo("The current time in checkRandomTimer is %lld\n",cur_time);
+	printTime(cur_time);
 	WebcfgInfo("The current time in checkRandomTimer is %lld\n",get_global_rand_time());
 	if(cur_time >= get_global_rand_time())
 	{
@@ -682,6 +686,7 @@ int secondarySyncSeconds()
 	current_time = ct.tv_sec;
 	sync_secs =  get_global_rand_time() - current_time;
 	WebcfgInfo("The current time in secondarySyncSeconds is %lld\n",current_time);
+	printTime(current_time);
 	WebcfgInfo("The current time in secondarySyncSeconds is %lld\n",get_global_rand_time());
 	WebcfgInfo("The Sync Secons is %d\n", sync_secs);
 	if (sync_secs > 0)
@@ -692,4 +697,16 @@ int secondarySyncSeconds()
 	{
 		return 0;
 	}
+}
+
+void printTime(long long time)
+{
+	struct tm  ts;
+	char       buf[80];
+
+	// Format time, "ddd yyyy-mm-dd hh:mm:ss zzz"
+	time_t rawtime = time;
+	ts = *localtime(&rawtime);
+	strftime(buf, sizeof(buf), "%a %Y-%m-%d %H:%M:%S", &ts);
+	WebcfgInfo("The time in readable format %s\n", buf);
 }

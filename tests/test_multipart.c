@@ -99,6 +99,18 @@ char * getModelName()
 	return mName;
 }
 
+char * getAccountID()
+{
+	char *accID = strdup("account");
+	return accID;
+}
+
+char * getPartnerID()
+{
+	char *pID = strdup("PartnerID");
+	return pID;
+}
+
 char * getFirmwareVersion()
 {
 	char *fName = strdup("Firmware.bin");
@@ -162,7 +174,7 @@ void test_multipart()
 	}
 	printf("\n");
 	initRandomTimer();
-	set_global_secondary_docs(true);
+	set_global_supplementary_sync(true);
 	initWebcfgProperties(WEBCFG_PROPERTIES_FILE);
 	initWebConfigNotifyTask();
 	processWebcfgEvents();

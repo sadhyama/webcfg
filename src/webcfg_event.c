@@ -303,15 +303,23 @@ void* processSubdocEvents()
 
 							//add to DB, update tmp list and notification based on success ack.
 							sendSuccessNotification(subdoc_node, eventParam->subdoc_name, eventParam->version, eventParam->trans_id);
-							WebcfgDebug("AddToDB subdoc_name %s version %lu\n", eventParam->subdoc_name, (long)eventParam->version);
-							checkDBList(eventParam->subdoc_name,eventParam->version, NULL);
-							WebcfgDebug("checkRootUpdate\n");
-							if(checkRootUpdate() == WEBCFG_SUCCESS)
+							//No DB update for supplementary sync as version is not required to be stored.
+							if(!get_global_supplementary_sync())
 							{
-								WebcfgDebug("updateRootVersionToDB\n");
-								updateRootVersionToDB();
+								WebcfgInfo("AddToDB subdoc_name %s version %lu\n", eventParam->subdoc_name, (long)eventParam->version);
+								checkDBList(eventParam->subdoc_name,eventParam->version, NULL);
+								WebcfgDebug("checkRootUpdate\n");
+								if(checkRootUpdate() == WEBCFG_SUCCESS)
+								{
+									WebcfgDebug("updateRootVersionToDB\n");
+									updateRootVersionToDB();
+								}
+								addNewDocEntry(get_successDocCount());
 							}
-							addNewDocEntry(get_successDocCount());
+							else
+							{
+								WebcfgInfo("No DB update for supplementary sync as version is not required to be stored.\n");
+							}
 						}
 						else
 						{
@@ -417,15 +425,19 @@ void* processSubdocEvents()
 							//already in tmp latest version,send success notify, updateDB
 							WebcfgInfo("tmp version %lu same as event version %lu\n",(long)tmpVersion, (long)eventParam->version); 
 							sendSuccessNotification(subdoc_node, eventParam->subdoc_name, eventParam->version, eventParam->trans_id);
-							WebcfgInfo("AddToDB subdoc_name %s version %lu\n", eventParam->subdoc_name, (long)eventParam->version);
-							checkDBList(eventParam->subdoc_name,eventParam->version, NULL);
-							WebcfgDebug("checkRootUpdate\n");
-							if(checkRootUpdate() == WEBCFG_SUCCESS)
+
+							if(!get_global_supplementary_sync())
 							{
-								WebcfgDebug("updateRootVersionToDB\n");
-								updateRootVersionToDB();
+								WebcfgInfo("AddToDB subdoc_name %s version %lu\n", eventParam->subdoc_name, (long)eventParam->version);
+								checkDBList(eventParam->subdoc_name,eventParam->version, NULL);
+								WebcfgDebug("checkRootUpdate\n");
+								if(checkRootUpdate() == WEBCFG_SUCCESS)
+								{
+									WebcfgDebug("updateRootVersionToDB\n");
+									updateRootVersionToDB();
+								}
+								addNewDocEntry(get_successDocCount());
 							}
-							addNewDocEntry(get_successDocCount());
 						}
 					}
 					else
@@ -898,14 +910,22 @@ WEBCFG_STATUS retryMultipartSubdoc(webconfig_tmp_data_t *docNode, char *docName)
 							addWebConfgNotifyMsg(gmp->entries[m].name_space, gmp->entries[m].etag, "success", "none", get_global_transID(), 0, "status", 0, NULL, 200);
 							WebcfgDebug("deleteFromTmpList as scalar doc is applied\n");
 							deleteFromTmpList(gmp->entries[m].name_space);
-							checkDBList(gmp->entries[m].name_space,gmp->entries[m].etag, NULL);
-							WebcfgDebug("checkRootUpdate scalar doc case\n");
-							if(checkRootUpdate() == WEBCFG_SUCCESS)
+
+							if(!get_global_supplementary_sync())
 							{
-								WebcfgDebug("updateRootVersionToDB\n");
-								updateRootVersionToDB();
+								checkDBList(gmp->entries[m].name_space,gmp->entries[m].etag, NULL);
+								WebcfgDebug("checkRootUpdate scalar doc case\n");
+								if(checkRootUpdate() == WEBCFG_SUCCESS)
+								{
+									WebcfgDebug("updateRootVersionToDB\n");
+									updateRootVersionToDB();
+								}
+								addNewDocEntry(get_successDocCount());
 							}
-							addNewDocEntry(get_successDocCount());
+							else
+							{
+								WebcfgInfo("retryMultipartSubdoc. No DB update is required for supplementary sync\n");
+							}
 						}
 						rv = WEBCFG_SUCCESS;
 					}

@@ -205,14 +205,22 @@ WEBCFG_STATUS webcfg_http_request(char **configData, int r_count, int status, lo
 		}
 		WebcfgDebug("ConfigURL fetched is %s\n", webConfigURL);
 
-		//Update query param in the URL based on the existing doc names from db
-		getConfigDocList(docList);
+		if(!get_global_supplementary_sync())
+		{
+			//Update query param in the URL based on the existing doc names from db
+			getConfigDocList(docList);
+		}
+		else
+		{
+			WebcfgInfo("Update URL with telemetry poke string for supplementary sync\n");
+			strncpy(docList, TELEMETRY_POKE_STR, sizeof(docList)-1);
+		}
 		if(strlen(docList) > 0)
 		{
 			WebcfgInfo("docList is %s\n", docList);
 			snprintf(syncURL, MAX_BUF_SIZE, "%s?group_id=%s", webConfigURL, docList);
 			WEBCFG_FREE(webConfigURL);
-			WebcfgDebug("syncURL is %s\n", syncURL);
+			WebcfgInfo("syncURL is %s\n", syncURL);
 			webConfigURL =strdup( syncURL);
 		}
 
@@ -620,7 +628,17 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 							addWebConfgNotifyMsg(mp->entries[m].name_space, mp->entries[m].etag, "success", "none", trans_id,0, "status",0, NULL, 200);
 							WebcfgDebug("deleteFromTmpList as doc is applied\n");
 							deleteFromTmpList(mp->entries[m].name_space);
-							checkDBList(mp->entries[m].name_space,mp->entries[m].etag, NULL);
+							//DB version update is not required for supplementary sync
+							WebcfgInfo("B4 checkDBList. get_global_supplementary_sync() is %d\n", get_global_supplementary_sync());
+							if(!get_global_supplementary_sync())
+							{
+								WebcfgInfo("B4 checkDBList\n");
+								checkDBList(mp->entries[m].name_space,mp->entries[m].etag, NULL);
+							}
+							else
+							{
+								WebcfgInfo("checkDBList is not required as supplementary doc\n");
+							}
 							success_count++;
 						}
 
@@ -637,7 +655,14 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 							}
 							if(version != 0)
 							{
-								checkDBList("root",version, NULL);
+								if(!get_global_supplementary_sync())
+								{
+									checkDBList("root",version, NULL);
+								}
+								else
+								{
+									WebcfgInfo("checkDBList is not required as supplementary doc.\n");
+								}
 								success_count++;
 							}
 
@@ -685,10 +710,11 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 							WebcfgDebug("The result is %s\n",result);
 							updateTmpList(subdoc_node, mp->entries[m].name_space, mp->entries[m].etag, "failed", result, ccspStatus, 0, 1);
 							addWebConfgNotifyMsg(mp->entries[m].name_space, mp->entries[m].etag, "failed", result, trans_id,0,"status",ccspStatus, NULL, 200);
-							WebcfgDebug("checkRootUpdate\n");
-							if((ccspStatus == 204 && subdocStatus != WEBCFG_SUCCESS) && (checkRootUpdate() == WEBCFG_SUCCESS))
+							WebcfgInfo("checkRootUpdate\n");
+							WebcfgInfo("get_global_supplementary_sync() is %d\n", get_global_supplementary_sync());
+							if(!get_global_supplementary_sync() && (ccspStatus == 204 && subdocStatus != WEBCFG_SUCCESS) && (checkRootUpdate() == WEBCFG_SUCCESS))
 							{
-								WebcfgDebug("updateRootVersionToDB\n");
+								WebcfgInfo("updateRootVersionToDB\n");
 								updateRootVersionToDB();
 								addNewDocEntry(get_successDocCount());
 								if(NULL != reqParam)
@@ -699,7 +725,7 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 								break;
 							}
 
-							WebcfgDebug("the retry flag value is %d\n", get_doc_fail());
+							WebcfgInfo("the retry flag value is %d\n", get_doc_fail());
 						}
 						else
 						{
@@ -779,7 +805,7 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 		akerSet= 0;
 	}
 
-	if(success_count) //No DB update when all docs failed.
+	if(success_count && !get_global_supplementary_sync()) //No DB update when all docs failed and for supplementary sync.
 	{
 		size_t j=success_count;
 		
@@ -1306,7 +1332,7 @@ void createCurlHeader( struct curl_slist *list, struct curl_slist **header_list,
 		WEBCFG_FREE(auth_header);
 	}
 
-	if(!get_global_secondary_docs())
+	if(!get_global_supplementary_sync())
 	{
 		version_header = (char *) malloc(sizeof(char)*MAX_BUF_SIZE);
 		if(version_header !=NULL)
@@ -1330,7 +1356,7 @@ void createCurlHeader( struct curl_slist *list, struct curl_slist **header_list,
 		WEBCFG_FREE(schema_header);
 	}
 
-	if(!get_global_secondary_docs())
+	if(!get_global_supplementary_sync())
 	{
 		if(supportedVersion_header == NULL)
 		{
@@ -1613,7 +1639,7 @@ void createCurlHeader( struct curl_slist *list, struct curl_slist **header_list,
 	}
 
 	//Addtional headers for telemetry sync
-	if(get_global_secondary_docs())
+	if(get_global_supplementary_sync())
 	{
 		telemetryVersion_header = (char *) malloc(sizeof(char)*MAX_BUF_SIZE);
 		if(telemetryVersion_header !=NULL)

@@ -27,6 +27,7 @@
 #define MAX_BUF_SIZE	           256
 #define MAX_PARAMETERNAME_LENGTH       512
 #define BACKOFF_SLEEP_DELAY_SEC 	    10
+#define TELEMETRY_POKE_STR 		"telemetry"
 
 #ifdef BUILD_YOCTO
 #define DEVICE_PROPS_FILE       "/etc/device.properties"
@@ -83,6 +84,6 @@ bool check_rand_time();
 long long get_global_rand_time();
 int secondarySyncSeconds();
 void set_global_rand_time(long long value);
-bool get_global_secondary_docs();
-void set_global_secondary_docs(bool secondary_docs);
+bool get_global_supplementary_sync();
+void set_global_supplementary_sync(bool supplementary_sync);
 #endif

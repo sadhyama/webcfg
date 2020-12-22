@@ -238,8 +238,19 @@ WEBCFG_STATUS webcfg_http_request(char **configData, int r_count, int status, lo
 		}
 		WebcfgInfo("ConfigURL fetched is %s\n", webConfigURL);
 
-		//Update query param in the URL based on the existing doc names from db
-		getConfigDocList(docList);
+		if(!get_global_supplementarySync())
+		{
+			//Update query param in the URL based on the existing doc names from db
+			getConfigDocList(docList);
+		}
+		else
+		{
+			WebcfgInfo("Update docList for supplementary doc\n");
+			strncpy(docList, docname, sizeof(docList)-1);
+			WebcfgInfo("convert docList %s to lower case\n", docList);
+			docList[0] = tolower(docList[0]);
+		}
+
 		if(strlen(docList) > 0)
 		{
 			WebcfgInfo("docList is %s\n", docList);
@@ -2054,6 +2065,8 @@ void updateRootVersionToDB()
 	}
 
 	WebcfgDebug("The Etag is %lu\n",(long)version );
+
+	//TODO: Delete root only when all the primary and supplementary docs are applied .
 	//Delete tmp queue root as all docs are applied
 	WebcfgDebug("Delete tmp queue root as all docs are applied\n");
 	WebcfgDebug("root version to delete is %lu\n", (long)version);

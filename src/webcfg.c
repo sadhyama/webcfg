@@ -45,6 +45,7 @@
 #define TEST_FILE_LOCATION		"/tmp/multipart.bin"
 #endif
 #endif
+#define TELEMETRY_POKE_STR 		"telemetry"
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
 /*----------------------------------------------------------------------------*/
@@ -93,6 +94,7 @@ void *WebConfigMultipartTask(void *status)
         int Status = 0;
 	int retry_flag = 0;
 	char* docname[64] = {0};
+	char *syncDoc = NULL;
 	int i = 0;
 	struct timespec ts;
 	Status = (unsigned long)status;
@@ -136,11 +138,19 @@ void *WebConfigMultipartTask(void *status)
 	{
 		if(forced_sync)
 		{
-			WebcfgDebug("Triggered Forced sync\n");
-			processWebconfgSync((int)Status, NULL);
+			WebcfgInfo("Triggered Forced sync\n");
+			processWebconfgSync((int)Status, syncDoc);
 			WebcfgDebug("reset forced_sync after sync\n");
 			forced_sync = 0;
+			if(syncDoc !=NULL)
+			{
+				WebcfgInfo("free syncDoc\n");
+				WEBCFG_FREE(syncDoc);
+				syncDoc = NULL;
+			}
 			setForceSync("", "", 0);
+			WebcfgInfo("reset global_supplementarySync\n");
+			set_global_supplementarySync(0);
 		}
 
 		pthread_mutex_lock (&sync_mutex);
@@ -190,6 +200,16 @@ void *WebConfigMultipartTask(void *status)
 				{
 					forced_sync = 1;
 					WebcfgDebug("Received signal interrupt to Force Sync\n");
+
+					//To check telemetry poke string received and perform secondary doc sync.
+					if(strcmp(ForceSyncDoc, TELEMETRY_POKE_STR) == 0) //TODO: IsSupplementaryDoc() check is required here and avoid hardcoding for telemetry string.
+					{
+						WebcfgInfo("Received supplementary poke request for %s\n", TELEMETRY_POKE_STR);
+						set_global_supplementarySync(1);
+						ForceSyncDoc[0] = toupper(ForceSyncDoc[0]);
+						syncDoc = strdup(ForceSyncDoc);
+						WebcfgInfo("syncDoc in upper case is %s\n", syncDoc);
+					}
 					WEBCFG_FREE(ForceSyncDoc);
 					WEBCFG_FREE(ForceSyncTransID);
 				}

@@ -143,7 +143,7 @@ void test_multipart()
 
 	if(url == NULL)
 	{
-		printf("\nProvide config URL as argument\n");
+		printf("\nTestProvide config URL as argument\n");
 		return;
 	}
 	//configRet = webcfg_http_request(&webConfigData, r_count, index, status, &res_code, &transaction_uuid, &ct, &dataSize);

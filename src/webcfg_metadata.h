@@ -45,4 +45,5 @@ char * getsupportedVersion();
 char * getsupplementaryDocs();
 char * getSupplementaryUrls();
 void supplementaryUrls();
+WEBCFG_STATUS isSupplemetaryDoc(char *subDoc);
 #endif

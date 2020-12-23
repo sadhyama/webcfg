@@ -142,11 +142,10 @@ void *WebConfigMultipartTask(void *status)
 			processWebconfgSync((int)Status, syncDoc);
 			WebcfgDebug("reset forced_sync after sync\n");
 			forced_sync = 0;
-			if(syncDoc !=NULL)
+			if(get_global_supplementarySync() && syncDoc !=NULL)
 			{
 				WebcfgInfo("free syncDoc\n");
 				WEBCFG_FREE(syncDoc);
-				syncDoc = NULL;
 			}
 			setForceSync("", "", 0);
 			WebcfgInfo("reset global_supplementarySync\n");
@@ -201,12 +200,14 @@ void *WebConfigMultipartTask(void *status)
 					forced_sync = 1;
 					WebcfgDebug("Received signal interrupt to Force Sync\n");
 
-					//To check telemetry poke string received and perform secondary doc sync.
-					if(strcmp(ForceSyncDoc, TELEMETRY_POKE_STR) == 0) //TODO: IsSupplementaryDoc() check is required here and avoid hardcoding for telemetry string.
+					ForceSyncDoc[0] = toupper(ForceSyncDoc[0]);
+					WebcfgInfo("ForceSyncDoc in upper case is %s\n", ForceSyncDoc);
+					//To check poke string received is supplementary doc or not.
+					if(isSupplemetaryDoc(ForceSyncDoc) == WEBCFG_SUCCESS)
 					{
-						WebcfgInfo("Received supplementary poke request for %s\n", TELEMETRY_POKE_STR);
+						WebcfgInfo("Received supplementary poke request for %s\n", ForceSyncDoc);
 						set_global_supplementarySync(1);
-						ForceSyncDoc[0] = toupper(ForceSyncDoc[0]);
+						//ForceSyncDoc[0] = toupper(ForceSyncDoc[0]);
 						syncDoc = strdup(ForceSyncDoc);
 						WebcfgInfo("syncDoc in upper case is %s\n", syncDoc);
 					}

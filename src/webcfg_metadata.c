@@ -255,6 +255,35 @@ WEBCFG_STATUS isSubDocSupported(char *subDoc)
 	return WEBCFG_FAILURE;
 }
 
+//To check if the doc received during poke is supplementary or not.
+WEBCFG_STATUS isSupplemetaryDoc(char *subDoc)
+{
+	char* docname[64] = {0};
+	int i = 0;
+
+	*docname = getSupplementaryUrls();
+	int docs_size = sizeof(docname)/sizeof(*docname);
+
+	WebcfgInfo("docs_size is %d\n", docs_size);
+	for(i=0; i<docs_size; i++)
+	{
+		if(docname[i] != NULL)
+		{
+			WebcfgInfo("Supplementary check for docname[%d] %s\n", i, docname[i]);
+			if(strncmp(docname[i], subDoc, strlen(subDoc)) == 0)
+			{
+				WebcfgInfo("%s is supplementary\n",subDoc);
+				return WEBCFG_SUCCESS;
+			}
+		}
+		else
+		{
+			break;
+		}
+	}
+	return WEBCFG_FAILURE;
+}
+
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
 /*----------------------------------------------------------------------------*/

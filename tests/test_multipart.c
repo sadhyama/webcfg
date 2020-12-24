@@ -101,6 +101,18 @@ char * getModelName()
 	return mName;
 }
 
+char * getPartnerID()
+{
+	char *pID = strdup("partnerID");
+	return pID;
+}
+
+char * getAccountID()
+{
+	char *aID = strdup("accountID");
+	return aID;
+}
+
 char * getFirmwareVersion()
 {
 	char *fName = strdup("Firmware.bin");

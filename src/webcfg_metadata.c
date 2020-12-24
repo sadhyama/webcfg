@@ -312,7 +312,6 @@ void supplementaryUrls()
 	while(token != NULL)
 	{
 		supplementary_urls[count] = token;
-		*supplementary_urls[count] = toupper((unsigned char) *supplementary_urls[count]);
 		WebcfgInfo("The supplementary_urls[%d] is %s\n", count, supplementary_urls[count]);
 		count++;
 		token = strtok(NULL, ",");

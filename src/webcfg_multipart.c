@@ -64,12 +64,14 @@ static char g_FirmwareVersion[64]={'\0'};
 static char g_bootTime[64]={'\0'};
 static char g_productClass[64]={'\0'};
 static char g_ModelName[64]={'\0'};
+static char g_PartnerID[64]={'\0'};
+static char g_AccountID[64]={'\0'};
 char g_RebootReason[64]={'\0'};
 static char g_transID[64]={'\0'};
 static char * g_contentLen = NULL;
 static char *supportedVersion_header=NULL;
 static char *supportedDocs_header=NULL;
-static char *supplementaryDocs_header=NULL;
+//static char *supplementaryDocs_header=NULL;
 static multipartdocs_t *g_mp_head = NULL;
 pthread_mutex_t multipart_t_mut =PTHREAD_MUTEX_INITIALIZER;
 static int eventFlag = 0;
@@ -199,10 +201,11 @@ WEBCFG_STATUS webcfg_http_request(char **configData, int r_count, int status, lo
 		}
 		else
 		{
-
-			if(docname != NULL)
+			if(docname != NULL && strlen(docname)>0)
 			{
 				WebcfgInfo("Supplementary sync for %s\n",docname);
+				docname[0] = toupper(docname[0]);
+				WebcfgInfo("docname in uppercase is %s\n", docname);
 				Get_Supplementary_URL(docname, configURL);
 				WebcfgInfo("Supplementary sync \n");
 				WebcfgInfo("Supplementary sync url fetched is %s\n", configURL);
@@ -242,13 +245,6 @@ WEBCFG_STATUS webcfg_http_request(char **configData, int r_count, int status, lo
 		{
 			//Update query param in the URL based on the existing doc names from db
 			getConfigDocList(docList);
-		}
-		else
-		{
-			WebcfgInfo("Update docList for supplementary doc\n");
-			strncpy(docList, docname, sizeof(docList)-1);
-			WebcfgInfo("convert docList %s to lower case\n", docList);
-			docList[0] = tolower(docList[0]);
 		}
 
 		if(strlen(docList) > 0)
@@ -679,7 +675,6 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 				{
 					WebcfgInfo("WebConfig SET Request\n");
 					setValues(reqParam, paramCount, ATOMIC_SET_WEBCONFIG, NULL, NULL, &ret, &ccspStatus);
-					ret = WDMP_SUCCESS;
 					if(ret == WDMP_SUCCESS)
 					{
 						WebcfgInfo("setValues success. ccspStatus : %d\n", ccspStatus);
@@ -988,7 +983,10 @@ size_t headr_callback(char *buffer, size_t size, size_t nitems)
 					stripspaces(header_str, &final_header);
 					if(g_contentLen != NULL)
 					{
-						WEBCFG_FREE(g_contentLen);
+						if(atoi(g_contentLen) != 0)
+						{
+							WEBCFG_FREE(g_contentLen);
+						}
 					}
 					g_contentLen = strdup(final_header);
 				}
@@ -1367,10 +1365,13 @@ void createCurlHeader( struct curl_slist *list, struct curl_slist **header_list,
 	char *FwVersion = NULL, *FwVersion_header=NULL;
 	char *supportedDocs = NULL;
 	char *supportedVersion = NULL;
-	char *supplementaryDocs = NULL;
+	//char *supplementaryDocs = NULL;
         char *productClass = NULL, *productClass_header = NULL;
 	char *ModelName = NULL, *ModelName_header = NULL;
 	char *systemReadyTime = NULL, *systemReadyTime_header=NULL;
+	char *telemetryVersion_header = NULL;
+	char *PartnerID = NULL, *PartnerID_header = NULL;
+	char *AccountID = NULL, *AccountID_header = NULL;
 	struct timespec cTime;
 	char currentTime[32];
 	char *currentTime_header=NULL;
@@ -1381,15 +1382,11 @@ void createCurlHeader( struct curl_slist *list, struct curl_slist **header_list,
 	char* ForceSyncDoc = NULL;
 	size_t supported_doc_size = 0;
 	size_t supported_version_size = 0;
-	size_t supplementary_docs_size = 0;
+	//size_t supplementary_docs_size = 0;
 
 	WebcfgInfo("Start of createCurlheader\n");
 	//Fetch auth JWT token from cloud.
 	getAuthToken();
-	//int len=0; char *token= NULL;//check here
-	//readFromFile("/tmp/webcfg_token", &token, &len );
-	//strcpy(get_global_auth_token(), );
-
 	WebcfgDebug("get_global_auth_token() is %s\n", get_global_auth_token());
 
 	auth_header = (char *) malloc(sizeof(char)*MAX_HEADER_LEN);
@@ -1400,14 +1397,17 @@ void createCurlHeader( struct curl_slist *list, struct curl_slist **header_list,
 		WEBCFG_FREE(auth_header);
 	}
 
-	version_header = (char *) malloc(sizeof(char)*MAX_BUF_SIZE);
-	if(version_header !=NULL)
+	if(!get_global_supplementarySync())
 	{
-		refreshConfigVersionList(version, 0);
-		snprintf(version_header, MAX_BUF_SIZE, "IF-NONE-MATCH:%s", ((strlen(version)!=0) ? version : "0"));
-		WebcfgInfo("version_header formed %s\n", version_header);
-		list = curl_slist_append(list, version_header);
-		WEBCFG_FREE(version_header);
+		version_header = (char *) malloc(sizeof(char)*MAX_BUF_SIZE);
+		if(version_header !=NULL)
+		{
+			refreshConfigVersionList(version, 0);
+			snprintf(version_header, MAX_BUF_SIZE, "IF-NONE-MATCH:%s", ((strlen(version)!=0) ? version : "0"));
+			WebcfgInfo("version_header formed %s\n", version_header);
+			list = curl_slist_append(list, version_header);
+			WEBCFG_FREE(version_header);
+		}
 	}
 	list = curl_slist_append(list, "Accept: application/msgpack");
 
@@ -1420,82 +1420,85 @@ void createCurlHeader( struct curl_slist *list, struct curl_slist **header_list,
 		WEBCFG_FREE(schema_header);
 	}
 
-
-	if(supportedVersion_header == NULL)
+	if(!get_global_supplementarySync())
 	{
-		supportedVersion = getsupportedVersion();
-
-		if(supportedVersion !=NULL)
+		if(supportedVersion_header == NULL)
 		{
-			supported_version_size = strlen(supportedVersion)+strlen("X-System-Schema-Version: ");
-			supportedVersion_header = (char *) malloc(supported_version_size+1);
-			memset(supportedVersion_header,0,supported_version_size+1);
-			WebcfgDebug("supportedVersion fetched is %s\n", supportedVersion);
-			snprintf(supportedVersion_header, supported_version_size+1, "X-System-Schema-Version: %s", supportedVersion);
+			supportedVersion = getsupportedVersion();
+
+			if(supportedVersion !=NULL)
+			{
+				supported_version_size = strlen(supportedVersion)+strlen("X-System-Schema-Version: ");
+				supportedVersion_header = (char *) malloc(supported_version_size+1);
+				memset(supportedVersion_header,0,supported_version_size+1);
+				WebcfgDebug("supportedVersion fetched is %s\n", supportedVersion);
+				snprintf(supportedVersion_header, supported_version_size+1, "X-System-Schema-Version: %s", supportedVersion);
+				WebcfgInfo("supportedVersion_header formed %s\n", supportedVersion_header);
+				list = curl_slist_append(list, supportedVersion_header);
+			}
+			else
+			{
+				WebcfgInfo("supportedVersion fetched is NULL\n");
+			}
+		}
+		else
+		{
 			WebcfgInfo("supportedVersion_header formed %s\n", supportedVersion_header);
 			list = curl_slist_append(list, supportedVersion_header);
 		}
+
+		if(supportedDocs_header == NULL)
+		{
+			supportedDocs = getsupportedDocs();
+
+			if(supportedDocs !=NULL)
+			{
+				supported_doc_size = strlen(supportedDocs)+strlen("X-System-Supported-Docs: ");
+				supportedDocs_header = (char *) malloc(supported_doc_size+1);
+				memset(supportedDocs_header,0,supported_doc_size+1);
+				WebcfgDebug("supportedDocs fetched is %s\n", supportedDocs);
+				snprintf(supportedDocs_header, supported_doc_size+1, "X-System-Supported-Docs: %s", supportedDocs);
+				WebcfgInfo("supportedDocs_header formed %s\n", supportedDocs_header);
+				list = curl_slist_append(list, supportedDocs_header);
+			}
+			else
+			{
+				WebcfgInfo("SupportedDocs fetched is NULL\n");
+			}
+		}
 		else
 		{
-			WebcfgInfo("supportedVersion fetched is NULL\n");
-		}
-	}
-	else
-	{
-		WebcfgInfo("supportedVersion_header formed %s\n", supportedVersion_header);
-		list = curl_slist_append(list, supportedVersion_header);
-	}
-
-	if(supportedDocs_header == NULL)
-	{
-		supportedDocs = getsupportedDocs();
-
-		if(supportedDocs !=NULL)
-		{
-			supported_doc_size = strlen(supportedDocs)+strlen("X-System-Supported-Docs: ");
-			supportedDocs_header = (char *) malloc(supported_doc_size+1);
-			memset(supportedDocs_header,0,supported_doc_size+1);
-			WebcfgDebug("supportedDocs fetched is %s\n", supportedDocs);
-			snprintf(supportedDocs_header, supported_doc_size+1, "X-System-Supported-Docs: %s", supportedDocs);
 			WebcfgInfo("supportedDocs_header formed %s\n", supportedDocs_header);
 			list = curl_slist_append(list, supportedDocs_header);
 		}
-		else
-		{
-			WebcfgInfo("SupportedDocs fetched is NULL\n");
-		}
 	}
 	else
 	{
-		WebcfgInfo("supportedDocs_header formed %s\n", supportedDocs_header);
-		list = curl_slist_append(list, supportedDocs_header);
-	}
-
-	if(supplementaryDocs_header == NULL)
-	{
-		supplementaryDocs = getsupplementaryDocs();
-
-		if(supplementaryDocs !=NULL)
+		/*if(supplementaryDocs_header == NULL)
 		{
-			supplementary_docs_size = strlen(supplementaryDocs)+strlen("X-System-SupplementaryService-Sync: ");
-			supplementaryDocs_header = (char *) malloc(supplementary_docs_size+1);
-			memset(supplementaryDocs_header,0,supplementary_docs_size+1);
-			WebcfgDebug("supplementaryDocs fetched is %s\n", supplementaryDocs);
-			snprintf(supplementaryDocs_header, supplementary_docs_size+1, "X-System-SupplementaryService-Sync: %s", supplementaryDocs);
+			supplementaryDocs = getsupplementaryDocs();
+
+			if(supplementaryDocs !=NULL)
+			{
+				supplementary_docs_size = strlen(supplementaryDocs)+strlen("X-System-SupplementaryService-Sync: ");
+				supplementaryDocs_header = (char *) malloc(supplementary_docs_size+1);
+				memset(supplementaryDocs_header,0,supplementary_docs_size+1);
+				WebcfgDebug("supplementaryDocs fetched is %s\n", supplementaryDocs);
+				snprintf(supplementaryDocs_header, supplementary_docs_size+1, "X-System-SupplementaryService-Sync: %s", supplementaryDocs);
+				WebcfgInfo("supplementaryDocs_header formed %s\n", supplementaryDocs_header);
+				list = curl_slist_append(list, supplementaryDocs_header);
+			}
+			else
+			{
+				WebcfgInfo("supplementaryDocs fetched is NULL\n");
+			}
+		}
+		else
+		{
 			WebcfgInfo("supplementaryDocs_header formed %s\n", supplementaryDocs_header);
 			list = curl_slist_append(list, supplementaryDocs_header);
-		}
-		else
-		{
-			WebcfgInfo("supplementaryDocs fetched is NULL\n");
-		}
+		}*/
 	}
-	else
-	{
-		WebcfgInfo("supplementaryDocs_header formed %s\n", supplementaryDocs_header);
-		list = curl_slist_append(list, supplementaryDocs_header);
-	}
-
 
 	if(strlen(g_bootTime) ==0)
 	{
@@ -1698,6 +1701,73 @@ void createCurlHeader( struct curl_slist *list, struct curl_slist **header_list,
 	{
 		WebcfgError("Failed to get ModelName\n");
 	}
+
+	//Addtional headers for telemetry sync
+	if(get_global_supplementarySync())
+	{
+		telemetryVersion_header = (char *) malloc(sizeof(char)*MAX_BUF_SIZE);
+		if(telemetryVersion_header !=NULL)
+		{
+			snprintf(telemetryVersion_header, MAX_BUF_SIZE, "X-System-Telemetry-Profile-Version: %s", "2.0");
+			WebcfgInfo("telemetryVersion_header formed %s\n", telemetryVersion_header);
+			list = curl_slist_append(list, telemetryVersion_header);
+			WEBCFG_FREE(telemetryVersion_header);
+		}
+
+		if(strlen(g_PartnerID) ==0)
+		{
+			PartnerID = getPartnerID();
+			if(PartnerID !=NULL)
+			{
+			       strncpy(g_PartnerID, PartnerID, sizeof(g_PartnerID)-1);
+			       WebcfgDebug("g_PartnerID fetched is %s\n", g_PartnerID);
+			       WEBCFG_FREE(PartnerID);
+			}
+		}
+
+		if(strlen(g_PartnerID))
+		{
+			PartnerID_header = (char *) malloc(sizeof(char)*MAX_BUF_SIZE);
+			if(PartnerID_header !=NULL)
+			{
+				snprintf(PartnerID_header, MAX_BUF_SIZE, "X-System-PartnerID: %s", g_PartnerID);
+				WebcfgInfo("PartnerID_header formed %s\n", PartnerID_header);
+				list = curl_slist_append(list, PartnerID_header);
+				WEBCFG_FREE(PartnerID_header);
+			}
+		}
+		else
+		{
+			WebcfgError("Failed to get PartnerID\n");
+		}
+
+		if(strlen(g_AccountID) ==0)
+		{
+			AccountID = getAccountID();
+			if(AccountID !=NULL)
+			{
+			       strncpy(g_AccountID, AccountID, sizeof(g_AccountID)-1);
+			       WebcfgDebug("g_AccountID fetched is %s\n", g_AccountID);
+			       WEBCFG_FREE(AccountID);
+			}
+		}
+
+		if(strlen(g_AccountID))
+		{
+			AccountID_header = (char *) malloc(sizeof(char)*MAX_BUF_SIZE);
+			if(AccountID_header !=NULL)
+			{
+				snprintf(AccountID_header, MAX_BUF_SIZE, "X-System-AccountID: %s", g_AccountID);
+				WebcfgInfo("AccountID_header formed %s\n", AccountID_header);
+				list = curl_slist_append(list, AccountID_header);
+				WEBCFG_FREE(AccountID_header);
+			}
+		}
+		else
+		{
+			WebcfgError("Failed to get AccountID\n");
+		}
+	}
 	*header_list = list;
 }
 
@@ -1804,7 +1874,7 @@ void parse_multipart(char *ptr, int no_of_bytes)
 				mp_node->next = NULL;
 
 				WebcfgDebug("mp_node->etag is %ld\n",(long)mp_node->etag);
-				WebcfgDebug("mp_node->name_space is %s\n", mp_node->name_space);
+				WebcfgInfo("mp_node->name_space is %s\n", mp_node->name_space);
 				WebcfgDebug("mp_node->data is %s\n", mp_node->data);
 				WebcfgDebug("mp_node->data_size is %zu\n", mp_node->data_size);
 				WebcfgDebug("mp_node->isSupplementarySync is %d\n", mp_node->isSupplementarySync);
@@ -2026,7 +2096,7 @@ WEBCFG_STATUS checkRootDelete()
 			WebcfgDebug("tmp list count is %d\n", count);
 			break;
 		}
-		WebcfgInfo("Root check ====> temp->name %s\n", temp->name);
+		WebcfgDebug("Root check ====> temp->name %s\n", temp->name);
 		if( strcmp("root", temp->name) != 0)
 		{
 			WebcfgDebug("Found doc in tmp list\n");
@@ -2065,8 +2135,8 @@ WEBCFG_STATUS checkRootUpdate()
 			WebcfgDebug("tmp list count is %d\n", count);
 			break;
 		}
-		WebcfgInfo("Root check ====> temp->name %s\n", temp->name);
-		WebcfgInfo("temp->isSupplementarySync is %d\n", temp->isSupplementarySync);
+		WebcfgDebug("Root check ====> temp->name %s\n", temp->name);
+		WebcfgDebug("temp->isSupplementarySync is %d\n", temp->isSupplementarySync);
 		if((temp->error_code == 204 && (temp->error_details != NULL && strstr(temp->error_details, "doc_unsupported") != NULL)) || (temp->isSupplementarySync == 1)) //skip supplementary docs
 		{
 			if(temp->isSupplementarySync)

@@ -484,10 +484,10 @@ WEBCFG_STATUS addToTmpList()
 				pthread_mutex_unlock (&webconfig_tmp_data_mut);
 			}
 
-			WebcfgInfo("--->>doc %s with version %lu is added to list\n", new_node->name, (long)new_node->version);
+			WebcfgDebug("--->>doc %s with version %lu is added to list\n", new_node->name, (long)new_node->version);
 			numOfMpDocs = numOfMpDocs + 1;
 		}
-		WebcfgInfo("numOfMpDocs %d\n", numOfMpDocs);
+		WebcfgDebug("numOfMpDocs %d\n", numOfMpDocs);
 
 		if(mp_count+1 == numOfMpDocs)
 		{

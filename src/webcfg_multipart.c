@@ -675,6 +675,7 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 				{
 					WebcfgInfo("WebConfig SET Request\n");
 					setValues(reqParam, paramCount, ATOMIC_SET_WEBCONFIG, NULL, NULL, &ret, &ccspStatus);
+					WebcfgInfo("ret is %d\n", ret);
 					if(ret == WDMP_SUCCESS)
 					{
 						WebcfgInfo("setValues success. ccspStatus : %d\n", ccspStatus);
@@ -734,27 +735,29 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 					}
 					else
 					{
+						WebcfgError("setValues Fail. check 9005. ccspStatus : %d\n", ccspStatus);
 						if(ccspStatus == 9005)
 						{
 							subdocStatus = isSubDocSupported(mp->name_space);
+							WebcfgInfo("After isSubDocSupported\n");
 							if(subdocStatus != WEBCFG_SUCCESS)
 							{
-								WebcfgDebug("The ccspstatus is %d\n",ccspStatus);
+								WebcfgInfo("The ccspstatus is %d\n",ccspStatus);
 								ccspStatus = 204;
 							}
 						}
 						WebcfgError("setValues Failed. ccspStatus : %d\n", ccspStatus);
 						errd = mapStatus(ccspStatus);
-						WebcfgDebug("The errd value is %d\n",errd);
+						WebcfgInfo("The errd value is %d\n",errd);
 
 						mapWdmpStatusToStatusMessage(errd, errDetails);
-						WebcfgDebug("The errDetails value is %s\n",errDetails);
+						WebcfgInfo("The errDetails value is %s\n",errDetails);
 
 						//Update error_details to tmp list and send failure notification to cloud.
 						if((ccspStatus == CCSP_CRASH_STATUS_CODE) || (ccspStatus == 204) || (ccspStatus == 191) || (ccspStatus == 193) || (ccspStatus == 190))
 						{
 							subdocStatus = isSubDocSupported(mp->name_space);
-							WebcfgDebug("ccspStatus is %d\n", ccspStatus);
+							WebcfgInfo("ccspStatus is %d\n", ccspStatus);
 							if(ccspStatus == 204 && subdocStatus != WEBCFG_SUCCESS)
 							{
 								snprintf(result,MAX_VALUE_LEN,"doc_unsupported:%s", errDetails);
@@ -764,7 +767,7 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 								set_doc_fail(1);
 								snprintf(result,MAX_VALUE_LEN,"crash_retrying:%s", errDetails);
 							}
-							WebcfgDebug("The result is %s\n",result);
+							WebcfgInfo("The result is %s\n",result);
 							updateTmpList(subdoc_node, mp->name_space, mp->etag, "failed", result, ccspStatus, 0, 1);
 							addWebConfgNotifyMsg(mp->name_space, mp->etag, "failed", result, trans_id,0,"status",ccspStatus, NULL, 200);
 							WebcfgInfo("checkRootUpdate\n");
@@ -791,7 +794,7 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 						else
 						{
 							//snprintf(result,MAX_VALUE_LEN,"doc_rejected:%s", errDetails);
-							WebcfgDebug("The result is %s\n",result);
+							WebcfgInfo("The result is %s\n",result);
 							updateTmpList(subdoc_node, mp->name_space, mp->etag, "failed", result, ccspStatus, 0, 0);
 							addWebConfgNotifyMsg(mp->name_space, mp->etag, "failed", result, trans_id,0, "status", ccspStatus, NULL, 200);
 						}

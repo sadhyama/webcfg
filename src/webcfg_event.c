@@ -163,11 +163,11 @@ void* blobEventHandler()
 		}
 		else
 		{
-			WebcfgDebug("Waiting at timer loop of 5s\n");
+			WebcfgInfo("Waiting at timer loop of 5s\n");
 			sleep(5);
 			if (get_global_shutdown())
 			{
-				WebcfgDebug("g_shutdown true, break timer expire events\n");
+				WebcfgInfo("g_shutdown true, break timer expire events\n");
 				break;
 			}
 		}
@@ -306,7 +306,7 @@ void* processSubdocEvents()
 							//No DB update for supplementary sync as version is not required to be stored.
 							if(subdoc_node->isSupplementarySync == 0)
 							{
-								WebcfgDebug("AddToDB subdoc_name %s version %lu\n", eventParam->subdoc_name, (long)eventParam->version);
+								WebcfgInfo("AddToDB subdoc_name %s version %lu\n", eventParam->subdoc_name, (long)eventParam->version);
 								checkDBList(eventParam->subdoc_name,eventParam->version, NULL);
 								WebcfgDebug("checkRootUpdate\n");
 								if(checkRootUpdate() == WEBCFG_SUCCESS)
@@ -382,8 +382,11 @@ void* processSubdocEvents()
 					{
 						if((getDocVersionFromTmpList(subdoc_node, eventParam->subdoc_name))== eventParam->version)
 						{
+							WebcfgInfo("B4 startWebcfgTimer. eventParam->subdoc_name %s\n", eventParam->subdoc_name);
 							startWebcfgTimer(doctimer_node, eventParam->subdoc_name, eventParam->trans_id, eventParam->timeout);
+							WebcfgInfo("After startWebcfgTimer\n");
 							addWebConfgNotifyMsg(eventParam->subdoc_name, eventParam->version, "pending", NULL, get_global_transID(),eventParam->timeout, "ack", 0, NULL, 200);
+							WebcfgInfo("After addWebConfgNotifyMsg\n");
 						}
 						else
 						{
@@ -600,7 +603,7 @@ void createTimerExpiryEvent(char *docName, uint16_t transid)
 //Update Tmp list and send success notification to cloud .
 void sendSuccessNotification(webconfig_tmp_data_t *subdoc_node, char *name, uint32_t version, uint16_t txid)
 {
-	addWebConfgNotifyMsg(name, version, "success", "none", get_global_transID(),0, "status",0, NULL, 200);
+	/*addWebConfgNotifyMsg(name, version, "success", "none", get_global_transID(),0, "status",0, NULL, 200);
 
 	if((subdoc_node->isSupplementarySync == 1) && (validateEvent(subdoc_node, name, txid) != WEBCFG_SUCCESS))
 	{
@@ -610,7 +613,12 @@ void sendSuccessNotification(webconfig_tmp_data_t *subdoc_node, char *name, uint
 	{
 		updateTmpList(subdoc_node, name, version, "success", "none", 0, txid, 0);
 		deleteFromTmpList(name);
-	}
+	}*/
+	WebcfgInfo("Inside sendSuccessNotification\n");
+	updateTmpList(subdoc_node, name, version, "success", "none", 0, txid, 0);
+	addWebConfgNotifyMsg(name, version, "success", "none", get_global_transID(),0, "status",0, NULL, 200);
+	deleteFromTmpList(name);
+	WebcfgInfo("sendSuccessNotification end\n");
 }
 
 //start internal timer for required doc when timeout value is received
@@ -618,6 +626,7 @@ WEBCFG_STATUS startWebcfgTimer(expire_timer_t *timer_node, char *name, uint16_t 
 {
 	if(updateTimerList(timer_node, true, name, transID, timeout) != WEBCFG_SUCCESS)
 	{
+		WebcfgInfo("In startWebcfgTimer. after updateTimerList\n");
 		//add docs to timer list
 		expire_timer_t *new_node = NULL;
 		new_node=(expire_timer_t *)malloc(sizeof(expire_timer_t));
@@ -625,12 +634,14 @@ WEBCFG_STATUS startWebcfgTimer(expire_timer_t *timer_node, char *name, uint16_t 
 		if(new_node)
 		{
 			memset( new_node, 0, sizeof( expire_timer_t ) );
-			WebcfgDebug("Adding events to list\n");
+			WebcfgInfo("Adding events to list\n");
 			new_node->running = true;
+			WebcfgInfo("B4 strdup name is %s\n", name);
 			new_node->subdoc_name = strdup(name);
+			WebcfgInfo("After strdup name is %s\n", name);
 			new_node->txid = transID;
 			new_node->timeout = timeout;
-			WebcfgDebug("started webcfg internal timer\n");
+			WebcfgInfo("started webcfg internal timer\n");
 
 			new_node->next=NULL;
 
@@ -643,7 +654,7 @@ WEBCFG_STATUS startWebcfgTimer(expire_timer_t *timer_node, char *name, uint16_t 
 			else
 			{
 				expire_timer_t *temp = NULL;
-				WebcfgDebug("Adding next events to list\n");
+				WebcfgInfo("Adding next events to list\n");
 				temp = g_timer_head;
 				while(temp !=NULL)
 				{
@@ -671,7 +682,7 @@ WEBCFG_STATUS updateTimerList(expire_timer_t *temp, int status, char *docname, u
 {
 	if (NULL != temp)
 	{
-		WebcfgDebug("node is pointing to temp->subdoc_name %s \n",temp->subdoc_name);
+		WebcfgInfo("node is pointing to temp->subdoc_name %s \n",temp->subdoc_name);
 		if( strcmp(docname, temp->subdoc_name) == 0)
 		{
 			pthread_mutex_lock (&expire_timer_mut);
@@ -1080,17 +1091,18 @@ expire_timer_t * getTimerNode(char *docname)
 	expire_timer_t *temp = NULL;
 	temp = get_global_timer_node();
 
+	WebcfgInfo("getTimerNode. docname is %s\n", docname);
 	//Traverse through timer list & fetch required doc timer node.
 	while (NULL != temp)
 	{
-		WebcfgDebug("getTimerNode: subdoc_name %s txid %hu timeout %lu running %d\n",temp->subdoc_name, temp->txid, (long)temp->timeout, temp->running);
+		WebcfgInfo("getTimerNode: subdoc_name %s txid %hu timeout %lu running %d\n",temp->subdoc_name, temp->txid, (long)temp->timeout, temp->running);
 		if( strcmp(docname, temp->subdoc_name) == 0)
 		{
 			return temp;
 		}
 		temp= temp->next;
 	}
-	WebcfgDebug("getTimerNode failed for doc %s\n", docname);
+	WebcfgInfo("getTimerNode failed for doc %s\n", docname);
 	return NULL;
 }
 

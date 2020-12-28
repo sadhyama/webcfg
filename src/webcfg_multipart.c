@@ -1038,7 +1038,7 @@ uint32_t get_global_root()
 		g_version = strtoul(temp,NULL,0);
 		WEBCFG_FREE(temp);
 	}
-	WebcfgDebug("g_version is %lu\n", (long)g_version);
+	WebcfgInfo("g_version is %lu\n", (long)g_version);
 	return g_version;
 }
 
@@ -1906,7 +1906,7 @@ void parse_multipart(char *ptr, int no_of_bytes)
 				mp_node->next = NULL;
 
 				WebcfgDebug("mp_node->etag is %ld\n",(long)mp_node->etag);
-				WebcfgInfo("mp_node->name_space is %s\n", mp_node->name_space);
+				WebcfgInfo("mp_node->name_space is %s mp_node->etag is %ld mp_node->isSupplementarySync %d\n", mp_node->name_space, (long)mp_node->etag, mp_node->isSupplementarySync );
 				WebcfgDebug("mp_node->data is %s\n", mp_node->data);
 				WebcfgDebug("mp_node->data_size is %zu\n", mp_node->data_size);
 				WebcfgDebug("mp_node->isSupplementarySync is %d\n", mp_node->isSupplementarySync);
@@ -2044,7 +2044,7 @@ void print_tmp_doc_list(size_t mp_count)
 	while (NULL != temp)
 	{
 		count = count+1;
-		WebcfgInfo("node is pointing to temp->name %s temp->version %lu temp->status %s temp->error_details %s\n",temp->name, (long)temp->version, temp->status, temp->error_details);
+		WebcfgInfo("node is pointing to temp->name %s temp->version %lu temp->status %s temp->error_details %s temp->isSupplementarySync %d temp->retry_count %d temp->retry_expiry_timestamp %lld\n",temp->name, (long)temp->version, temp->status, temp->error_details, temp->isSupplementarySync, temp->retry_count, temp->retry_expiry_timestamp);
 		temp= temp->next;
 		WebcfgDebug("count %d mp_count %zu\n", count, mp_count);
 		if(count == (int)mp_count)
@@ -2164,11 +2164,11 @@ WEBCFG_STATUS checkRootUpdate()
 	{
 		if(count > 1)
 		{
-			WebcfgDebug("tmp list count is %d\n", count);
+			WebcfgInfo("tmp list count is %d\n", count);
 			break;
 		}
-		WebcfgDebug("Root check ====> temp->name %s\n", temp->name);
-		WebcfgDebug("temp->isSupplementarySync is %d\n", temp->isSupplementarySync);
+		WebcfgInfo("Root check ====> temp->name %s\n", temp->name);
+		WebcfgInfo("temp->isSupplementarySync is %d\n", temp->isSupplementarySync);
 		if((temp->error_code == 204 && (temp->error_details != NULL && strstr(temp->error_details, "doc_unsupported") != NULL)) || (temp->isSupplementarySync == 1)) //skip supplementary docs
 		{
 			if(temp->isSupplementarySync)
@@ -2176,15 +2176,16 @@ WEBCFG_STATUS checkRootUpdate()
 				WebcfgInfo("skipping supplementary doc %s\n", temp->name);
 			}
 			WebcfgDebug("Error details: %s\n",temp->error_details);
-			WebcfgDebug("Skipping unsupported sub doc %s\n",temp->name);
+			WebcfgInfo("Skipping unsupported sub doc %s\n",temp->name);
 		}
 		else if( strcmp("root", temp->name) != 0)
 		{
-			WebcfgDebug("Found doc in tmp list\n");
+			WebcfgInfo("Found doc in tmp list\n");
 			count = count+1;
 		}
 		else
 		{
+			WebcfgInfo("Found root in tmp list\n");
 			count = 1;
 		}
 		temp= temp->next;

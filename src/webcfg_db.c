@@ -419,11 +419,18 @@ WEBCFG_STATUS addToTmpList()
 			{
 				memset( new_node, 0, sizeof( webconfig_tmp_data_t ) );
 
-				WebcfgDebug("Adding root doc to list\n");
+				WebcfgInfo("Adding root doc to list\n");
 				new_node->name = strdup("root");
-				new_node->version = get_global_root();
+				new_node->version = 0;
+				if(get_global_supplementarySync())
+				{
+					WebcfgInfo("Primary sync , update global root version to tmp list\n");
+					new_node->version = get_global_root();
+				}
 				new_node->status = strdup("pending");
-				new_node->isSupplementarySync = get_global_supplementarySync();
+				//For root, isSupplementarySync is always 0 as root version is for primary sync.
+				new_node->isSupplementarySync = 0;
+				WebcfgInfo("new_node->isSupplementarySync is %d\n", new_node->isSupplementarySync);
 				new_node->error_details = strdup("none");
 				new_node->error_code = 0;
 				new_node->trans_id = 0;
@@ -445,7 +452,7 @@ WEBCFG_STATUS addToTmpList()
 					WebcfgDebug("mp_node->name_space is %s\n", mp_node->name_space);
 					new_node->version = mp_node->etag;
 					new_node->status = strdup("pending");
-					new_node->isSupplementarySync = get_global_supplementarySync();
+					new_node->isSupplementarySync = mp_node->isSupplementarySync;
 					new_node->error_details = strdup("none");
 					new_node->error_code = 0;
 					new_node->trans_id = 0;
@@ -477,7 +484,7 @@ WEBCFG_STATUS addToTmpList()
 			else
 			{
 				webconfig_tmp_data_t *temp = NULL;
-				WebcfgDebug("Adding docs to list\n");
+				WebcfgInfo("Adding docs to list\n");
 				temp = g_head;
 				while(temp->next !=NULL)
 				{
@@ -487,10 +494,10 @@ WEBCFG_STATUS addToTmpList()
 				pthread_mutex_unlock (&webconfig_tmp_data_mut);
 			}
 
-			WebcfgDebug("--->>doc %s with version %lu is added to list\n", new_node->name, (long)new_node->version);
+			WebcfgInfo("--->>doc %s with version %lu is added to list\n", new_node->name, (long)new_node->version);
 			numOfMpDocs = numOfMpDocs + 1;
 		}
-		WebcfgDebug("numOfMpDocs %d\n", numOfMpDocs);
+		WebcfgInfo("numOfMpDocs %d\n", numOfMpDocs);
 
 		if(mp_count+1 == numOfMpDocs)
 		{
@@ -609,7 +616,7 @@ WEBCFG_STATUS updateTmpList(webconfig_tmp_data_t *temp, char *docname, uint32_t 
 				WebcfgDebug("updateTmpList: reset temp->retry_count\n");
 				temp->retry_count = 0;
 			}
-			WebcfgInfo("doc %s is updated to version %lu status %s error_details %s error_code %lu trans_id %lu temp->retry_count %d\n", docname, (long)temp->version, temp->status, temp->error_details, (long)temp->error_code, (long)temp->trans_id, temp->retry_count);
+			WebcfgInfo("doc %s is updated to version %lu status %s error_details %s error_code %lu trans_id %lu temp->retry_count %d temp->isSupplementarySync %d\n", docname, (long)temp->version, temp->status, temp->error_details, (long)temp->error_code, (long)temp->trans_id, temp->retry_count, temp->isSupplementarySync);
 			pthread_mutex_unlock (&webconfig_tmp_data_mut);
 			WebcfgDebug("mutex_unlock in current temp details\n");
 			return WEBCFG_SUCCESS;

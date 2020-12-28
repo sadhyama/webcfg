@@ -200,7 +200,7 @@ int addToEventQueue(char *buf)
 {
 	event_data_t *Data;
 
-	WebcfgDebug ("Add data to event queue\n");
+	WebcfgInfo ("Add data to event queue\n");
         Data = (event_data_t *)malloc(sizeof(event_data_t));
 
 	if(Data)
@@ -215,16 +215,20 @@ int addToEventQueue(char *buf)
                 WebcfgInfo("Producer added Data\n");
                 pthread_cond_signal(&event_con);
                 pthread_mutex_unlock (&event_mut);
-                WebcfgDebug("mutex unlock in producer event thread\n");
+                WebcfgInfo("mutex unlock in producer event thread\n");
             }
             else
             {
                 event_data_t *temp = eventDataQ;
-                while(temp->next)
+		WebcfgInfo("adding data events to eventQ\n");
+                while(temp->next !=NULL)
                 {
+		    WebcfgInfo("Inside while eventQ\n");
                     temp = temp->next;
                 }
+		WebcfgInfo("After temp->next eventQ\n");
                 temp->next = Data;
+		WebcfgInfo("Added Data to temp->next\n");
                 pthread_mutex_unlock (&event_mut);
             }
         }
@@ -267,13 +271,13 @@ void* processSubdocEvents()
 	while(FOREVER())
 	{
 		pthread_mutex_lock (&event_mut);
-		WebcfgDebug("mutex lock in event consumer thread\n");
+		WebcfgInfo("mutex lock in event consumer thread\n");
 		if(eventDataQ != NULL)
 		{
 			event_data_t *Data = eventDataQ;
 			eventDataQ = eventDataQ->next;
 			pthread_mutex_unlock (&event_mut);
-			WebcfgDebug("mutex unlock in event consumer thread\n");
+			WebcfgInfo("mutex unlock in event consumer thread\n");
 
 			WebcfgInfo("Data->data is %s\n", Data->data);
 			rv = parseEventData(Data->data, &eventParam);
@@ -483,10 +487,10 @@ void* processSubdocEvents()
 				pthread_mutex_unlock (&event_mut);
 				break;
 			}
-			WebcfgDebug("Before pthread cond wait in event consumer thread\n");
+			WebcfgInfo("Before pthread cond wait in event consumer thread\n");
 			pthread_cond_wait(&event_con, &event_mut);
 			pthread_mutex_unlock (&event_mut);
-			WebcfgDebug("mutex unlock in event consumer thread after cond wait\n");
+			WebcfgInfo("mutex unlock in event consumer thread after cond wait\n");
 		}
 	}
 	return NULL;

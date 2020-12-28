@@ -566,7 +566,7 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 		WebcfgError("addToTmpList failed\n");
 	}
 
-	WebcfgDebug("mp->entries_count is %d\n",mp_count);
+	WebcfgInfo("mp->entries_count is %d\n",mp_count);
 
 	multipartdocs_t *mp = NULL;
 	mp = g_mp_head;
@@ -590,6 +590,7 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 			if(subdoc_node->isSupplementarySync == 0)
 			{
 				current_doc_count++;
+				WebcfgInfo("current_doc_count incremented to %d\n", current_doc_count);
 			}
 		}
 		WebcfgInfo("mp->name_space %s\n", mp->name_space);
@@ -602,7 +603,7 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 		{
 			akerIndex = mp;
 			akerSet = 1;
-			WebcfgDebug("skip aker doc and process at the end\n");
+			WebcfgInfo("skip aker doc and process at the end\n");
 			mp = mp->next;
 			continue;
 		}

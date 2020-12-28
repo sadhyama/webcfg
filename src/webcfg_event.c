@@ -163,7 +163,7 @@ void* blobEventHandler()
 		}
 		else
 		{
-			WebcfgInfo("Waiting at timer loop of 5s\n");
+			WebcfgDebug("Waiting at timer loop of 5s\n");
 			sleep(5);
 			if (get_global_shutdown())
 			{
@@ -220,7 +220,7 @@ int addToEventQueue(char *buf)
             else
             {
                 event_data_t *temp = eventDataQ;
-                while(temp != NULL)
+                while(temp->next)
                 {
                     temp = temp->next;
                 }
@@ -306,7 +306,7 @@ void* processSubdocEvents()
 							//No DB update for supplementary sync as version is not required to be stored.
 							if(subdoc_node->isSupplementarySync == 0)
 							{
-								WebcfgInfo("AddToDB subdoc_name %s version %lu\n", eventParam->subdoc_name, (long)eventParam->version);
+								WebcfgDebug("AddToDB subdoc_name %s version %lu\n", eventParam->subdoc_name, (long)eventParam->version);
 								checkDBList(eventParam->subdoc_name,eventParam->version, NULL);
 								WebcfgDebug("checkRootUpdate\n");
 								if(checkRootUpdate() == WEBCFG_SUCCESS)
@@ -656,11 +656,13 @@ WEBCFG_STATUS startWebcfgTimer(expire_timer_t *timer_node, char *name, uint16_t 
 				expire_timer_t *temp = NULL;
 				WebcfgInfo("Adding next events to list\n");
 				temp = g_timer_head;
-				while(temp !=NULL)
+				while(temp->next !=NULL)
 				{
 					temp=temp->next;
 				}
+				WebcfgInfo("Assigning to temp->next\n");
 				temp->next=new_node;
+				WebcfgInfo("After temp->next\n");
 				pthread_mutex_unlock (&expire_timer_mut);
 			}
 
@@ -673,6 +675,7 @@ WEBCFG_STATUS startWebcfgTimer(expire_timer_t *timer_node, char *name, uint16_t 
 			return WEBCFG_FAILURE;
 		}
 	}
+	WebcfgInfo("startWebcfgTimer. numOfEvents is %d\n", numOfEvents);
 	WebcfgInfo("startWebcfgTimer success\n");
 	return WEBCFG_SUCCESS;
 }
@@ -866,8 +869,8 @@ WEBCFG_STATUS retryMultipartSubdoc(webconfig_tmp_data_t *docNode, char *docName)
 		WebcfgDebug("gmp->entries_count %d\n",mp_count);
 		if(strcmp(gmp->name_space, docName) == 0)
 		{
-			WebcfgDebug("gmp->name_space %s\n", gmp->name_space);
-			WebcfgDebug("gmp->etag %lu\n" , (long)gmp->etag);
+			WebcfgInfo("gmp->name_space %s\n", gmp->name_space);
+			WebcfgInfo("gmp->etag %lu\n" , (long)gmp->etag);
 			WebcfgDebug("gmp->data %s\n" , gmp->data);
 			WebcfgDebug("gmp->data_size is %zu\n", gmp->data_size);
 

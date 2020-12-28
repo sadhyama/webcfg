@@ -171,6 +171,7 @@ WEBCFG_STATUS webcfg_http_request(char **configData, int r_count, int status, lo
 	data.size = 0;
 	void * dataVal = NULL;
 	char syncURL[256]={'\0'};
+	char docname_upper[64]={'\0'};
 
 	curl = curl_easy_init();
 	if(curl)
@@ -204,9 +205,10 @@ WEBCFG_STATUS webcfg_http_request(char **configData, int r_count, int status, lo
 			if(docname != NULL && strlen(docname)>0)
 			{
 				WebcfgInfo("Supplementary sync for %s\n",docname);
-				docname[0] = toupper(docname[0]);
-				WebcfgInfo("docname in uppercase is %s\n", docname);
-				Get_Supplementary_URL(docname, configURL);
+				strcpy(docname_upper , docname);
+				docname_upper[0] = toupper(docname_upper[0]);
+				WebcfgInfo("docname is %s and in uppercase is %s\n", docname, docname_upper);
+				Get_Supplementary_URL(docname_upper, configURL);
 				WebcfgInfo("Supplementary sync \n");
 				WebcfgInfo("Supplementary sync url fetched is %s\n", configURL);
 			}
@@ -228,7 +230,7 @@ WEBCFG_STATUS webcfg_http_request(char **configData, int r_count, int status, lo
 			else
 			{
 				WebcfgInfo("Inside supplementary condition\n");
-				Set_Supplementary_URL(docname, webConfigURL);
+				Set_Supplementary_URL(docname_upper, webConfigURL);
 			}
 		}
 		else

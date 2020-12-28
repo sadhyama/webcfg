@@ -133,7 +133,7 @@ void addWebConfgNotifyMsg(char *docname, uint32_t version, char *status, char *e
 
 		args->response_code = response_code;
 
-		WebcfgInfo("args->name:%s,args->application_status:%s,args->timeout:%lu,args->error_details:%s,args->version:%s,args->transaction_uuid:%s,args->type:%s,args->error_code:%lu,args->response_code:%lu\n",args->name,args->application_status, (long)args->timeout, args->error_details, args->version, args->transaction_uuid, args->type, (long)args->error_code,args->response_code );
+		WebcfgDebug("args->name:%s,args->application_status:%s,args->timeout:%lu,args->error_details:%s,args->version:%s,args->transaction_uuid:%s,args->type:%s,args->error_code:%lu,args->response_code:%lu\n",args->name,args->application_status, (long)args->timeout, args->error_details, args->version, args->transaction_uuid, args->type, (long)args->error_code,args->response_code );
 
 		args->next=NULL;
 
@@ -142,7 +142,7 @@ void addWebConfgNotifyMsg(char *docname, uint32_t version, char *status, char *e
 		if(notifyMsgQ == NULL)
 		{
 			notifyMsgQ = args;
-			WebcfgInfo("Producer added notify message\n");
+			WebcfgDebug("Producer added notify message\n");
 			pthread_cond_signal(&notify_con);
 			pthread_mutex_unlock (&notify_mut);
 			WebcfgDebug("mutex unlock in notify producer thread\n");
@@ -176,7 +176,7 @@ void* processWebConfgNotification()
 	while(1)
 	{
 		pthread_mutex_lock (&notify_mut);
-		WebcfgInfo("mutex lock in notify consumer thread\n");
+		WebcfgDebug("mutex lock in notify consumer thread\n");
 		if(notifyMsgQ != NULL)
 		{
 			notify_params_t *msg = notifyMsgQ;
@@ -266,10 +266,10 @@ void* processWebConfgNotification()
 				pthread_mutex_unlock (&notify_mut);
 				break;
 			}
-			WebcfgInfo("Before pthread cond wait in notify thread\n");
+			WebcfgDebug("Before pthread cond wait in notify thread\n");
 			pthread_cond_wait(&notify_con, &notify_mut);
 			pthread_mutex_unlock (&notify_mut);
-			WebcfgInfo("mutex unlock in notify thread after cond wait\n");
+			WebcfgDebug("mutex unlock in notify thread after cond wait\n");
 		}
 	}
 	return NULL;

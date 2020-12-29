@@ -390,7 +390,7 @@ WEBCFG_STATUS addToTmpList()
 	int mp_count = 0;
 
 	mp_count = get_multipartdoc_count();
-	WebcfgDebug("multipartdoc count is %d\n", mp_count);
+	WebcfgInfo("multipartdoc count is %d\n", mp_count);
 	//numOfMpDocs = 0;
 	//WebcfgDebug("reset numOfMpDocs to %d\n", numOfMpDocs);
 
@@ -499,11 +499,11 @@ WEBCFG_STATUS addToTmpList()
 		}
 		WebcfgInfo("numOfMpDocs %d\n", numOfMpDocs);
 
-		if(mp_count+1 == numOfMpDocs)
-		{
+		//if(mp_count+1 == numOfMpDocs) //TODO:check if it can be optimized based on count.
+		//{
 			WebcfgInfo("addToTmpList success\n");
 			retStatus = WEBCFG_SUCCESS;
-		}
+		//}
 	}
 	WebcfgDebug("addToList return %d\n", retStatus);
 	return retStatus;
@@ -1146,6 +1146,7 @@ webconfig_tmp_data_t * getTmpNode(char *docname)
 		}
 		temp= temp->next;
 	}
+	WebcfgError("getTmpNode failed for doc %s\n", docname);
 	return NULL;
 }
 

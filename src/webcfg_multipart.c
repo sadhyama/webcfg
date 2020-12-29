@@ -581,6 +581,14 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 		webconfig_tmp_data_t * subdoc_node = NULL;
 		subdoc_node = getTmpNode(mp->name_space);
 
+		if(subdoc_node == NULL)
+		{
+			WebcfgError("Failed to get subdoc_node from tmp list\n");
+			mp = mp->next;
+			continue;
+		}
+
+		WebcfgInfo("check for current docs\n");
 		//Process subdocs with status "pending" which indicates docs from current sync, skip all others.
 		if(strcmp(subdoc_node->status, "pending") != 0)
 		{
@@ -2046,10 +2054,10 @@ void print_tmp_doc_list(size_t mp_count)
 		count = count+1;
 		WebcfgInfo("node is pointing to temp->name %s temp->version %lu temp->status %s temp->error_details %s temp->isSupplementarySync %d temp->retry_count %d temp->retry_expiry_timestamp %lld\n",temp->name, (long)temp->version, temp->status, temp->error_details, temp->isSupplementarySync, temp->retry_count, temp->retry_expiry_timestamp);
 		temp= temp->next;
-		WebcfgDebug("count %d mp_count %zu\n", count, mp_count);
+		WebcfgInfo("count %d mp_count %zu\n", count, mp_count);
 		if(count == (int)mp_count)
 		{
-			WebcfgDebug("Found all docs in the list\n");
+			WebcfgInfo("Found all docs in the list\n");
 			break;
 		}
 	}
@@ -2334,6 +2342,7 @@ int get_multipartdoc_count()
 		count++;
 		temp = temp->next;
 	}
+	WebcfgInfo("get_multipartdoc_count . count is %d\n", count);
 	return count;
 }
 

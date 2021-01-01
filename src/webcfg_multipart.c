@@ -590,7 +590,7 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 
 		WebcfgInfo("check for current docs\n");
 		//Process subdocs with status "pending" which indicates docs from current sync, skip all others.
-		if(strcmp(subdoc_node->status, "pending") != 0)
+		if(subdoc_node->trans_id != 0) //check here.
 		{
 			WebcfgInfo("skipped setValues for doc %s as it is already processed\n", mp->name_space);
 			mp = mp->next;
@@ -750,10 +750,10 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 						if(ccspStatus == 9005)
 						{
 							subdocStatus = isSubDocSupported(mp->name_space);
-							WebcfgInfo("After isSubDocSupported\n");
+							WebcfgDebug("After isSubDocSupported\n");
 							if(subdocStatus != WEBCFG_SUCCESS)
 							{
-								WebcfgInfo("The ccspstatus is %d\n",ccspStatus);
+								WebcfgDebug("The ccspstatus is %d\n",ccspStatus);
 								ccspStatus = 204;
 							}
 						}
@@ -762,13 +762,13 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 						WebcfgDebug("The errd value is %d\n",errd);
 
 						mapWdmpStatusToStatusMessage(errd, errDetails);
-						WebcfgInfo("The errDetails value is %s\n",errDetails);
+						WebcfgDebug("The errDetails value is %s\n",errDetails);
 
 						//Update error_details to tmp list and send failure notification to cloud.
 						if((ccspStatus == CCSP_CRASH_STATUS_CODE) || (ccspStatus == 204) || (ccspStatus == 191) || (ccspStatus == 193) || (ccspStatus == 190))
 						{
 							subdocStatus = isSubDocSupported(mp->name_space);
-							WebcfgInfo("ccspStatus is %d\n", ccspStatus);
+							WebcfgDebug("ccspStatus is %d\n", ccspStatus);
 							if(ccspStatus == 204 && subdocStatus != WEBCFG_SUCCESS)
 							{
 								snprintf(result,MAX_VALUE_LEN,"doc_unsupported:%s", errDetails);
@@ -800,10 +800,10 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 
 								snprintf(result,MAX_VALUE_LEN,"crash_retrying:%s", errDetails);
 							}
-							WebcfgInfo("The result is %s\n",result);
+							WebcfgDebug("The result is %s\n",result);
 							updateTmpList(subdoc_node, mp->name_space, mp->etag, "failed", result, ccspStatus, 0, 1);
 							addWebConfgNotifyMsg(mp->name_space, mp->etag, "failed", result, subdoc_node->cloud_trans_id, 0,"status",ccspStatus, NULL, 200);
-							WebcfgInfo("checkRootUpdate\n");
+							WebcfgDebug("checkRootUpdate\n");
 							//No root update for supplementary sync
 							if(get_global_supplementarySync())
 							{
@@ -811,7 +811,7 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 							}
 							if(!get_global_supplementarySync() && (ccspStatus == 204 && subdocStatus != WEBCFG_SUCCESS) && (checkRootUpdate() == WEBCFG_SUCCESS))
 							{
-								WebcfgInfo("updateRootVersionToDB\n");
+								WebcfgDebug("updateRootVersionToDB\n");
 								updateRootVersionToDB();
 								addNewDocEntry(get_successDocCount());
 								if(NULL != reqParam)
@@ -2183,8 +2183,11 @@ WEBCFG_STATUS checkRootUpdate()
 			{
 				WebcfgInfo("skipping supplementary doc %s\n", temp->name);
 			}
+			else
+			{
+				WebcfgInfo("Skipping unsupported sub doc %s\n",temp->name);
+			}
 			WebcfgDebug("Error details: %s\n",temp->error_details);
-			WebcfgInfo("Skipping unsupported sub doc %s\n",temp->name);
 		}
 		else if( strcmp("root", temp->name) != 0)
 		{

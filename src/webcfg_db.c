@@ -424,7 +424,7 @@ WEBCFG_STATUS addToTmpList()
 				WebcfgInfo("Adding root doc to list\n");
 				new_node->name = strdup("root");
 				new_node->version = 0;
-				if(get_global_supplementarySync())
+				if(!get_global_supplementarySync())
 				{
 					WebcfgInfo("Primary sync , update global root version to tmp list\n");
 					new_node->version = get_global_root();
@@ -463,14 +463,14 @@ WEBCFG_STATUS addToTmpList()
 					new_node->retry_expiry_timestamp = 0;
 					new_node->cloud_trans_id = strdup(cloud_transaction_id);
 
-					WebcfgInfo("new_node->name is %s\n", new_node->name);
+					WebcfgDebug("new_node->name is %s\n", new_node->name);
 					WebcfgDebug("new_node->version is %lu\n", (long)new_node->version);
 					WebcfgDebug("new_node->status is %s\n", new_node->status);
 					WebcfgDebug("new_node->isSupplementarySync is %d\n", new_node->isSupplementarySync);
 					WebcfgDebug("new_node->error_details is %s\n", new_node->error_details);
 					WebcfgDebug("new_node->retry_count is %d\n", new_node->retry_count);
 					WebcfgDebug("new_node->retry_expiry_timestamp is %lld\n", new_node->retry_expiry_timestamp);
-					WebcfgInfo("new_node->cloud_trans_id is %s\n", new_node->cloud_trans_id);
+					WebcfgDebug("new_node->cloud_trans_id is %s\n", new_node->cloud_trans_id);
 				}
 
 			}
@@ -502,11 +502,11 @@ WEBCFG_STATUS addToTmpList()
 			WebcfgDebug("--->>doc %s with version %lu is added to list\n", new_node->name, (long)new_node->version);
 			numOfMpDocs = numOfMpDocs + 1;
 		}
-		WebcfgInfo("numOfMpDocs %d\n", numOfMpDocs);
+		WebcfgDebug("numOfMpDocs %d\n", numOfMpDocs);
 
 		//if(mp_count+1 == numOfMpDocs) //TODO:check if it can be optimized based on count.
 		//{
-			WebcfgInfo("addToTmpList success\n");
+			WebcfgDebug("addToTmpList success\n");
 			retStatus = WEBCFG_SUCCESS;
 		//}
 	}

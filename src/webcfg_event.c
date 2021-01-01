@@ -154,7 +154,7 @@ void* blobEventHandler()
 				expired_node = getTimerNode(expired_doc);
 				updateTimerList(expired_node, false, expired_doc, tx_id, 0);
 				createTimerExpiryEvent(expired_doc, tx_id);
-				WebcfgDebug("After createTimerExpiryEvent\n");
+				WebcfgInfo("After createTimerExpiryEvent\n");
 			}
 			else
 			{
@@ -200,7 +200,7 @@ int addToEventQueue(char *buf)
 {
 	event_data_t *Data;
 
-	WebcfgDebug ("Add data to event queue\n");
+	WebcfgInfo ("Add data to event queue\n");
         Data = (event_data_t *)malloc(sizeof(event_data_t));
 
 	if(Data)
@@ -215,10 +215,11 @@ int addToEventQueue(char *buf)
                 WebcfgInfo("Producer added Data\n");
                 pthread_cond_signal(&event_con);
                 pthread_mutex_unlock (&event_mut);
-                WebcfgDebug("mutex unlock in producer event thread\n");
+                WebcfgInfo("mutex unlock in producer event thread\n");
             }
             else
             {
+		WebcfgInfo("Adding Data events to temp->next\n");
                 event_data_t *temp = eventDataQ;
                 while(temp->next)
                 {
@@ -269,13 +270,13 @@ void* processSubdocEvents()
 	while(FOREVER())
 	{
 		pthread_mutex_lock (&event_mut);
-		WebcfgDebug("mutex lock in event consumer thread\n");
+		WebcfgInfo("mutex lock in event consumer thread\n");
 		if(eventDataQ != NULL)
 		{
 			event_data_t *Data = eventDataQ;
 			eventDataQ = eventDataQ->next;
 			pthread_mutex_unlock (&event_mut);
-			WebcfgDebug("mutex unlock in event consumer thread\n");
+			WebcfgInfo("mutex unlock in event consumer thread\n");
 
 			WebcfgInfo("Data->data is %s\n", Data->data);
 			rv = parseEventData(Data->data, &eventParam);
@@ -363,13 +364,13 @@ void* processSubdocEvents()
 					{
 						docVersion = getDocVersionFromTmpList(subdoc_node, eventParam->subdoc_name);
 					}
-					WebcfgDebug("docVersion %lu\n", (long) docVersion);
+					WebcfgInfo("docVersion %lu\n", (long) docVersion);
 					addWebConfgNotifyMsg(eventParam->subdoc_name, docVersion, "pending", "timer_expired", subdoc_node->cloud_trans_id, eventParam->timeout, "status", 0, NULL, 200);
-					WebcfgDebug("retryMultipartSubdoc for EXPIRE case\n");
+					WebcfgInfo("retryMultipartSubdoc for EXPIRE case\n");
 					rs = retryMultipartSubdoc(subdoc_node, eventParam->subdoc_name);
 					if(rs == WEBCFG_SUCCESS)
 					{
-						WebcfgDebug("retryMultipartSubdoc success\n");
+						WebcfgInfo("retryMultipartSubdoc success\n");
 					}
 					else
 					{
@@ -481,14 +482,14 @@ void* processSubdocEvents()
 		{
 			if (get_global_shutdown())
 			{
-				WebcfgDebug("g_shutdown in event consumer thread\n");
+				WebcfgInfo("g_shutdown in event consumer thread\n");
 				pthread_mutex_unlock (&event_mut);
 				break;
 			}
-			WebcfgDebug("Before pthread cond wait in event consumer thread\n");
+			WebcfgInfo("Before pthread cond wait in event consumer thread\n");
 			pthread_cond_wait(&event_con, &event_mut);
 			pthread_mutex_unlock (&event_mut);
-			WebcfgDebug("mutex unlock in event consumer thread after cond wait\n");
+			WebcfgInfo("mutex unlock in event consumer thread after cond wait\n");
 		}
 	}
 	return NULL;
@@ -591,8 +592,9 @@ void createTimerExpiryEvent(char *docName, uint16_t transid)
 	WebcfgDebug("expiry_event_data formed %s\n", expiry_event_data);
 	if(expiry_event_data)
 	{
+		WebcfgInfo("B4 addToEventQueue\n");
 		addToEventQueue(expiry_event_data);
-		WebcfgDebug("Added EXPIRE event queue\n");
+		WebcfgInfo("Added EXPIRE event queue\n");
 	}
 	else
 	{
@@ -623,7 +625,7 @@ WEBCFG_STATUS startWebcfgTimer(expire_timer_t *timer_node, char *name, uint16_t 
 			WebcfgDebug("Adding events to list\n");
 			new_node->running = true;
 			new_node->subdoc_name = strdup(name);
-			WebcfgInfo("After strdup name is %s\n", name);
+			WebcfgDebug("After strdup name is %s\n", name);
 			new_node->txid = transID;
 			new_node->timeout = timeout;
 			WebcfgDebug("started webcfg internal timer\n");
@@ -639,7 +641,7 @@ WEBCFG_STATUS startWebcfgTimer(expire_timer_t *timer_node, char *name, uint16_t 
 			else
 			{
 				expire_timer_t *temp = NULL;
-				WebcfgDebug("Adding next events to list\n");
+				WebcfgInfo("Adding next events to list\n");
 				temp = g_timer_head;
 				while(temp->next !=NULL)
 				{
@@ -658,8 +660,8 @@ WEBCFG_STATUS startWebcfgTimer(expire_timer_t *timer_node, char *name, uint16_t 
 			return WEBCFG_FAILURE;
 		}
 	}
-	WebcfgInfo("startWebcfgTimer. numOfEvents is %d\n", numOfEvents);
-	WebcfgInfo("startWebcfgTimer success\n");
+	WebcfgDebug("startWebcfgTimer. numOfEvents is %d\n", numOfEvents);
+	WebcfgDebug("startWebcfgTimer success\n");
 	return WEBCFG_SUCCESS;
 }
 
@@ -826,14 +828,16 @@ WEBCFG_STATUS retryMultipartSubdoc(webconfig_tmp_data_t *docNode, char *docName)
 	char result[MAX_VALUE_LEN]={0};
 	int ccspStatus=0;
 	int paramCount = 0;
-	int mp_count = 0;
+	//int mp_count = 0;
 	uint16_t doc_transId = 0;
 	webcfgparam_t *pm = NULL;
 	multipartdocs_t *gmp = NULL;
 
+	WebcfgInfo("In retryMultipartSubdoc. docName %s\n", docName);
+	WebcfgInfo("B4 get_global_mp\n");
 	gmp = get_global_mp();
-
-	mp_count = get_numOfMpDocs();
+	WebcfgInfo("After get_global_mp\n");
+	//mp_count = get_numOfMpDocs();
 
 	if(gmp ==NULL)
 	{
@@ -849,7 +853,8 @@ WEBCFG_STATUS retryMultipartSubdoc(webconfig_tmp_data_t *docNode, char *docName)
 
 	while( gmp != NULL)
 	{
-		WebcfgDebug("gmp->entries_count %d\n",mp_count);
+		//WebcfgDebug("gmp->entries_count %d\n",mp_count);
+		WebcfgInfo("gmp is not NULL. gmp->name_space is %s\n", gmp->name_space);
 		if(strcmp(gmp->name_space, docName) == 0)
 		{
 			WebcfgInfo("gmp->name_space %s\n", gmp->name_space);
@@ -866,7 +871,7 @@ WEBCFG_STATUS retryMultipartSubdoc(webconfig_tmp_data_t *docNode, char *docName)
 				reqParam = (param_t *) malloc(sizeof(param_t) * paramCount);
 				memset(reqParam,0,(sizeof(param_t) * paramCount));
 
-				WebcfgDebug("paramCount is %d\n", paramCount);
+				WebcfgInfo("paramCount is %d\n", paramCount);
 				for (i = 0; i < paramCount; i++)
 				{
 			                if(pm->entries[i].value != NULL)
@@ -876,7 +881,7 @@ WEBCFG_STATUS retryMultipartSubdoc(webconfig_tmp_data_t *docNode, char *docName)
 							char *appended_doc = NULL;
 							WebcfgDebug("B4 webcfg_appendeddoc\n");
 							appended_doc = webcfg_appendeddoc( gmp->name_space, gmp->etag, pm->entries[i].value, pm->entries[i].value_size, &doc_transId);
-							WebcfgDebug("webcfg_appendeddoc doc_transId is %hu\n", doc_transId);
+							WebcfgInfo("webcfg_appendeddoc doc_transId is %hu\n", doc_transId);
 							reqParam[i].name = strdup(pm->entries[i].name);
 							WebcfgDebug("appended_doc length: %zu\n", strlen(appended_doc));
 							reqParam[i].value = strdup(appended_doc);
@@ -904,7 +909,7 @@ WEBCFG_STATUS retryMultipartSubdoc(webconfig_tmp_data_t *docNode, char *docName)
 
 				if(reqParam !=NULL && validate_request_param(reqParam, paramCount) == WEBCFG_SUCCESS)
 				{
-					WebcfgDebug("Proceed to setValues..\n");
+					WebcfgInfo("Proceed to setValues..\n");
 					WebcfgDebug("retryMultipartSubdoc WebConfig SET Request\n");
 					setValues(reqParam, paramCount, ATOMIC_SET_WEBCONFIG, NULL, NULL, &ret, &ccspStatus);
 					if(ret == WDMP_SUCCESS)
@@ -912,7 +917,7 @@ WEBCFG_STATUS retryMultipartSubdoc(webconfig_tmp_data_t *docNode, char *docName)
 						WebcfgInfo("retryMultipartSubdoc setValues success. ccspStatus : %d\n", ccspStatus);
 						if(reqParam[0].type  != WDMP_BASE64)
 						{
-							WebcfgDebug("For scalar docs, update trans_id as 0\n");
+							WebcfgInfo("For scalar docs, update trans_id as 0\n");
 							updateTmpList(docNode, gmp->name_space, gmp->etag, "success", "none", 0, 0, 0);
 							//send scalar success notification, delete tmp, updateDB
 							addWebConfgNotifyMsg(gmp->name_space, gmp->etag, "success", "none", docNode->cloud_trans_id, 0, "status", 0, NULL, 200);
@@ -945,7 +950,7 @@ WEBCFG_STATUS retryMultipartSubdoc(webconfig_tmp_data_t *docNode, char *docName)
 						WebcfgDebug("The errd value is %d\n",errd);
 
 						mapWdmpStatusToStatusMessage(errd, errDetails);
-						WebcfgDebug("The errDetails value is %s\n",errDetails);
+						WebcfgInfo("The errDetails value is %s\n",errDetails);
 
 						if((ccspStatus == 192) || (ccspStatus == 204) || (ccspStatus == 191) || (ccspStatus == 193) || (ccspStatus == 190))
 						{
@@ -956,19 +961,21 @@ WEBCFG_STATUS retryMultipartSubdoc(webconfig_tmp_data_t *docNode, char *docName)
 							addWebConfgNotifyMsg(gmp->name_space, gmp->etag, "pending", result, docNode->cloud_trans_id, 0,"status",ccspStatus, NULL, 200);
 							set_doc_fail(1);
 							updateFailureTimeStamp(docNode, gmp->name_space, getRetryExpiryTimeout());
-							WebcfgDebug("the retry flag value is %d\n", get_doc_fail());
+							WebcfgInfo("the retry flag value is %d\n", get_doc_fail());
 						}
 						else
 						{
 							snprintf(result,MAX_VALUE_LEN,"doc_rejected:%s", errDetails);
-							WebcfgDebug("The result is %s\n",result);
+							WebcfgInfo("The result is %s\n",result);
 							updateTmpList(docNode, gmp->name_space, gmp->etag, "failed", result, ccspStatus, 0, 0);
 							addWebConfgNotifyMsg(gmp->name_space, gmp->etag, "failed", result, docNode->cloud_trans_id, 0, "status", ccspStatus, NULL, 200);
 						}
 					}
 					reqParam_destroy(paramCount, reqParam);
+					WebcfgInfo("After reqParam_destroy\n");
 				}
 				webcfgparam_destroy( pm );
+				WebcfgInfo("After webcfgparam_destroy\n");
 			}
 			else
 			{
@@ -978,9 +985,12 @@ WEBCFG_STATUS retryMultipartSubdoc(webconfig_tmp_data_t *docNode, char *docName)
 		}
 		else
 		{
-			WebcfgDebug("docName %s not found in mp list\n", docName);
+			WebcfgInfo("docName %s not found in mp list\n", docName);
+			gmp = gmp->next;
+			WebcfgInfo("Traversing to mp next doc\n");
 		}
 	}
+	WebcfgInfo("retryMultipartSubdoc returns rv %d\n", rv);
 	return rv;
 }
 
@@ -1010,7 +1020,7 @@ WEBCFG_STATUS checkAndUpdateTmpRetryCount(webconfig_tmp_data_t *temp, char *docn
 {
 	if (NULL != temp)
 	{
-		WebcfgDebug("checkAndUpdateTmpRetryCount: temp->name %s, temp->version %lu, temp->retry_count %d\n",temp->name, (long)temp->version, temp->retry_count);
+		WebcfgInfo("checkAndUpdateTmpRetryCount: temp->name %s, temp->version %lu, temp->retry_count %d\n",temp->name, (long)temp->version, temp->retry_count);
 		if( strcmp(docname, temp->name) == 0)
 		{
 			if(temp->retry_count >= MAX_APPLY_RETRY_COUNT)
@@ -1020,13 +1030,13 @@ WEBCFG_STATUS checkAndUpdateTmpRetryCount(webconfig_tmp_data_t *temp, char *docn
 				if((temp->retry_count == MAX_APPLY_RETRY_COUNT) && (strcmp(temp->error_details, "max_retry_reached") !=0))
 				{
 					addWebConfgNotifyMsg(temp->name, temp->version, "failed", "max_retry_reached", temp->cloud_trans_id, 0,"status",0, NULL, 200);
-					WebcfgDebug("update max_retry_reached to tmp list: ccsp error code %hu\n", temp->error_code);
+					WebcfgInfo("update max_retry_reached to tmp list: ccsp error code %hu\n", temp->error_code);
 					updateTmpList(temp, temp->name, temp->version, "failed", "max_retry_reached", temp->error_code, 0, 1);
 				}
 				return WEBCFG_FAILURE;
 			}
 			temp->retry_count++;
-			WebcfgDebug("temp->retry_count updated to %d for docname %s\n",temp->retry_count, docname);
+			WebcfgInfo("temp->retry_count updated to %d for docname %s\n",temp->retry_count, docname);
 			return WEBCFG_SUCCESS;
 		}
 	}
@@ -1078,7 +1088,7 @@ expire_timer_t * getTimerNode(char *docname)
 	expire_timer_t *temp = NULL;
 	temp = get_global_timer_node();
 
-	WebcfgInfo("getTimerNode. docname is %s\n", docname);
+	WebcfgDebug("getTimerNode. docname is %s\n", docname);
 	//Traverse through timer list & fetch required doc timer node.
 	while (NULL != temp)
 	{
@@ -1089,7 +1099,7 @@ expire_timer_t * getTimerNode(char *docname)
 		}
 		temp= temp->next;
 	}
-	WebcfgInfo("getTimerNode failed for doc %s\n", docname);
+	WebcfgDebug("getTimerNode failed for doc %s\n", docname);
 	return NULL;
 }
 

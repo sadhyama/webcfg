@@ -97,6 +97,15 @@ target_link_libraries (test_root -lcunit -lmsgpackc -lcurl -lpthread  -lm -luuid
 
 target_link_libraries (test_root gcov -Wl,--no-as-needed )
 
+#-------------------------------------------------------------------------------
+#   test_pamunpack
+#-------------------------------------------------------------------------------
+add_test(NAME test_pamunpack COMMAND ${MEMORY_CHECK} ./test_pamunpack)
+add_executable(test_pamunpack test_pamunpack.c ../src/pam_param.c ../src/comp_helpers.c)
+target_link_libraries (test_pamunpack -lcunit -lmsgpackc -lcimplog -ltrower-base64)
+
+target_link_libraries (test_pamunpack gcov -Wl,--no-as-needed )
+
 # Code coverage
 
 add_custom_target(coverage

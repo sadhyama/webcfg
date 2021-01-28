@@ -13,8 +13,8 @@
 #   limitations under the License.
 
 set(PROJ_WEBCFG webcfg)
-set(HEADERS webcfg.h webcfg_param.h webcfg_pack.h webcfg_multipart.h webcfg_auth.h webcfg_notify.h webcfg_generic.h webcfg_db.h webcfg_log.h webcfg_blob.h webcfg_event.h webcfg_aker.h webcfg_metadata.h webcfg_timer.h)
-set(SOURCES webcfg_helpers.c webcfg.c webcfg_param.c webcfg_pack.c webcfg_multipart.c webcfg_auth.c webcfg_notify.c webcfg_db.c webcfg_generic.c webcfg_blob.c webcfg_event.c webcfg_client.c webcfg_aker.c webcfg_metadata.c webcfg_timer.c)
+set(HEADERS webcfg.h webcfg_param.h webcfg_pack.h webcfg_multipart.h webcfg_auth.h webcfg_notify.h webcfg_generic.h webcfg_db.h webcfg_log.h webcfg_blob.h webcfg_event.h webcfg_aker.h webcfg_metadata.h webcfg_timer.h comp_helpers.h pam_param.h)
+set(SOURCES webcfg_helpers.c webcfg.c webcfg_param.c webcfg_pack.c webcfg_multipart.c webcfg_auth.c webcfg_notify.c webcfg_db.c webcfg_generic.c webcfg_blob.c webcfg_event.c webcfg_client.c webcfg_aker.c webcfg_metadata.c webcfg_timer.c comp_helpers.c pam_param.c)
 
 add_library(${PROJ_WEBCFG} STATIC ${HEADERS} ${SOURCES})
 add_library(${PROJ_WEBCFG}.shared SHARED ${HEADERS} ${SOURCES})

@@ -101,8 +101,8 @@ target_link_libraries (test_root gcov -Wl,--no-as-needed )
 #   test_pamunpack
 #-------------------------------------------------------------------------------
 add_test(NAME test_pamunpack COMMAND ${MEMORY_CHECK} ./test_pamunpack)
-add_executable(test_pamunpack test_pamunpack.c ../src/pam_param.c ../src/comp_helpers.c)
-target_link_libraries (test_pamunpack -lcunit -lmsgpackc -lcimplog -ltrower-base64)
+add_executable(test_pamunpack test_pamunpack.c ../src/pam_param.c ../src/comp_helpers.c ../src/webcfg_pack.c ../src/webcfg_blob.c ../src/webcfg_db.c ../src/webcfg_timer.c ../src/webcfg_helpers.c ../src/webcfg.c ../src/webcfg_multipart.c ../src/webcfg_aker.c ../src/webcfg_client.c ../src/webcfg_notify.c ../src/webcfg_metadata.c ../src/webcfg_event.c ../src/webcfg_auth.c ../src/webcfg_param.c ../src/webcfg_generic.c)
+target_link_libraries (test_pamunpack -lcunit -lmsgpackc -lcurl -lpthread  -lm -luuid -ltrower-base64 -lwdmp-c -lcimplog -lcjson -lwrp-c -llibparodus -lnanomsg)
 
 target_link_libraries (test_pamunpack gcov -Wl,--no-as-needed )
 

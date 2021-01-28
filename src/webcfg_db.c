@@ -1104,6 +1104,7 @@ char * base64blobencoder(char * blob_data, size_t blob_size )
         }
 	return b64buffer;
 }
+
 int writebase64ToDBFile(char *base64_file_path, char *data)
 {
 	FILE *fp;

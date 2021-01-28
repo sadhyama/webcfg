@@ -18,12 +18,197 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <msgpack.h>
 #include <base64.h>
 #include <CUnit/Basic.h>
+#include "../src/webcfg_pack.h"
+#include "../src/webcfg_multipart.h"
+#include "../src/webcfg_timer.h"
+#include "../src/webcfg.h"
+#include "../src/webcfg_blob.h"
+#include "../src/webcfg_db.h"
 #include "../src/pam_param.h"
+#include "../src/webcfg_aker.h"
 #include "../src/comp_helpers.h"
+#include "../src/webcfg_metadata.h"
+#include "../src/webcfg_event.h"
+#include "../src/webcfg_auth.h"
+#include "../src/webcfg_param.h"
+#include "../src/webcfg_generic.h"
 
+#define UNUSED(x) (void )(x)
+
+char device_mac[32] = {'\0'};
 void pamUnpack(char *blob);
+
+char *getFirmwareUpgradeStartTime(void)
+{
+    return NULL;
+}
+
+char *getFirmwareUpgradeEndTime(void)
+{
+    return NULL;
+}
+
+char* get_deviceMAC()
+{
+	strcpy(device_mac, "b42xxxxxxxxx");
+	return device_mac;
+}
+
+void setValues(const param_t paramVal[], const unsigned int paramCount, const int setType, char *transactionId, money_trace_spans *timeSpan, WDMP_STATUS *retStatus, int *ccspStatus)
+{
+	UNUSED(paramVal);
+	UNUSED(paramCount);
+	UNUSED(setType);
+	UNUSED(transactionId);
+	UNUSED(timeSpan);
+	UNUSED(retStatus);
+	UNUSED(ccspStatus);
+	return;
+}
+
+int getForceSync(char** pString, char **transactionId)
+{
+	UNUSED(pString);
+	UNUSED(transactionId);
+	return 0;
+}
+int setForceSync(char* pString, char *transactionId,int *session_status)
+{
+	UNUSED(pString);
+	UNUSED(transactionId);
+	UNUSED(session_status);
+	return 0;
+}
+
+char * getParameterValue(char *paramName)
+{
+	UNUSED(paramName);
+	return NULL;
+}
+
+char * getSerialNumber()
+{
+	char *sNum = strdup("1234");
+	return sNum;
+}
+
+char * getDeviceBootTime()
+{
+	char *bTime = strdup("152200345");
+	return bTime;
+}
+
+char * getProductClass()
+{
+	char *pClass = strdup("Product");
+	return pClass;
+}
+
+char * getModelName()
+{
+	char *mName = strdup("Model");
+	return mName;
+}
+
+char * getPartnerID()
+{
+	char *pID = strdup("partnerID");
+	return pID;
+}
+
+char * getAccountID()
+{
+	char *aID = strdup("accountID");
+	return aID;
+}
+
+char * getFirmwareVersion()
+{
+	char *fName = strdup("Firmware.bin");
+	return fName;
+}
+
+char * getRebootReason()
+{
+	char *reason = strdup("factory-reset");
+	return reason;
+}
+
+void sendNotification(char *payload, char *source, char *destination)
+{
+	WEBCFG_FREE(payload);
+	WEBCFG_FREE(source);
+	UNUSED(destination);
+	return;
+}
+
+char *get_global_systemReadyTime()
+{
+	char *sTime = strdup("158000123");
+	return sTime;
+}
+
+int Get_Webconfig_URL( char *pString)
+{
+	char *webConfigURL =NULL;
+	loadInitURLFromFile(&webConfigURL);
+	pString = webConfigURL;
+        printf("The value of pString is %s\n",pString);
+	return 0;
+}
+
+int Set_Webconfig_URL( char *pString)
+{
+	printf("Set_Webconfig_URL pString %s\n", pString);
+	return 0;
+}
+
+int Get_Supplementary_URL( char *name, char *pString)
+{
+    UNUSED(name);
+    UNUSED(pString);
+    return 0;
+}
+
+int Set_Supplementary_URL( char *name, char *pString)
+{
+    UNUSED(name);
+    UNUSED(pString);
+    return 0;
+}
+
+char *getConnClientParamName(void)
+{
+    return NULL;
+}
+
+int registerWebcfgEvent(WebConfigEventCallback webcfgEventCB)
+{
+    UNUSED(webcfgEventCB);
+    return 0;
+}
+
+int unregisterWebcfgEvent()
+{
+	return 0;
+}
+void setAttributes(param_t *attArr, const unsigned int paramCount, money_trace_spans *timeSpan, WDMP_STATUS *retStatus)
+{
+	UNUSED(attArr);
+	UNUSED(paramCount);
+	UNUSED(timeSpan);
+	UNUSED(retStatus);
+	return;
+}
+
+WDMP_STATUS mapStatus(int ret)
+{
+	UNUSED(ret);
+	return 0;
+}
 
 int readFromFile1(char *filename, char **data, int *len)
 {
@@ -73,24 +258,59 @@ char * base64encoder1(char * blob_data, size_t blob_size )
 
 void test_pam_unpack()
 {
-	int len=0;
-	char subdocfile[64] = "../../tests/pam.bin";
+	int len1,len2=0;
+	data1_t *packRootData = NULL;
+	size_t rootPackSize=-1;
+	void *data =NULL;
 
-	char *binfileData = NULL;
-	int status = -1;
+	char tunneldocfile[64] = "../../tests/tunnel.bin";
+	char wifidocfile[64] = "../../tests/wifi.bin";
+
+	char *tunnelfileData = NULL;
+	char *wififileData = NULL;
 	char* blobbuff = NULL; 
 	char * encodedData = NULL;
+	uint16_t doc_transId = 0;
 
-	status = readFromFile1(subdocfile , &binfileData , &len);
+	readFromFile1(tunneldocfile , &tunnelfileData , &len1);
+	readFromFile1(wifidocfile , &wififileData , &len2);
 
-	printf("read status %d\n", status);
-	if(status == 1 )
+	printf("------------------------------\n");
+	packRootData = ( data1_t * ) malloc( sizeof( data1_t ) );
+	if(packRootData != NULL)
 	{
-		blobbuff = ( char*)binfileData;
+		printf("sdasdasd\n");
+		memset(packRootData, 0, sizeof(data1_t));
+
+		packRootData->count = 2;
+		packRootData->data_items = (dataval_t *) malloc( sizeof(dataval_t) * packRootData->count );
+		memset( packRootData->data_items, 0, sizeof(dataval_t) * packRootData->count );
+
+		packRootData->data_items[0].name = strdup("Device.Management.PublicNetData");
+		packRootData->data_items[0].value = malloc(sizeof(char) * len1+1);
+		memset(packRootData->data_items[0].value, 0, sizeof(char) * len1+1);
+		packRootData->data_items[0].value = memcpy(packRootData->data_items[0].value, tunnelfileData, len1+1);
+		packRootData->data_items[0].value[len1] = '\0';
+		packRootData->data_items[0].type = 12;
+
+		packRootData->data_items[1].name = strdup("Device.WiFi.PublicWiFiData");
+		packRootData->data_items[1].value = malloc(sizeof(char) * len2+1);
+		memset(packRootData->data_items[1].value, 0, sizeof(char) * len2+1);
+		packRootData->data_items[1].value = memcpy(packRootData->data_items[1].value, wififileData, len2+1);
+		packRootData->data_items[1].value[len2] = '\0';
+		packRootData->data_items[1].type = 12;
+	}
+
+	rootPackSize = webcfg_pack_rootdoc( packRootData, &data );
+	printf("rootPackSize is %ld\n", rootPackSize);
+
+	if(rootPackSize > 0 )
+	{
+		blobbuff = ( char*)data;
 		printf("blobbuff %s blob len %lu\n", blobbuff, strlen(blobbuff));
 
 	}
-	encodedData = base64encoder1(blobbuff, len);
+	encodedData =webcfg_appendeddoc( "PAM", 52425212, blobbuff, rootPackSize, &doc_transId);
 	pamUnpack(encodedData);
 }
 

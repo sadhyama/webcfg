@@ -28,10 +28,10 @@
 /*                               Data Structures                              */
 /*----------------------------------------------------------------------------*/
 enum {
-    OK                       = HELPERS_OK,
-    OUT_OF_MEMORY            = HELPERS_OUT_OF_MEMORY,
-    INVALID_FIRST_ELEMENT    = HELPERS_INVALID_FIRST_ELEMENT,
-    MISSING_ENTRY         = HELPERS_MISSING_WRAPPER,
+    OK                       = T_HELPERS_OK,
+    OUT_OF_MEMORY            = T_HELPERS_OUT_OF_MEMORY,
+    INVALID_FIRST_ELEMENT    = T_HELPERS_INVALID_FIRST_ELEMENT,
+    MISSING_ENTRY         = T_HELPERS_MISSING_WRAPPER,
     INVALID_PORT_RANGE,
     INVALID_PORT_NUMBER,
     INVALID_INTERNAL_IPV4,
@@ -66,24 +66,24 @@ pamparam_t* pamdoc_convert( const void *buf, size_t len )
 {
 	return comp_helper_convert( buf, len, sizeof(pamparam_t), "PublicHotspotData", 
                             MSGPACK_OBJECT_ARRAY, true,
-                           (process_fn_t) process_pamdoc,
-                           (destroy_fn_t) pamdoc_destroy );
+                           (process1_fn_t) process_pamdoc,
+                           (destroy1_fn_t) pamdoc_destroy );
 }
 
 tunneldoc_t* tunneldoc_convert(const void *buf, size_t len)
 {
 	return comp_helper_convert( buf, len, sizeof(tunneldoc_t), "Tunnels", 
                             MSGPACK_OBJECT_ARRAY, true,
-                           (process_fn_t) process_tunneldoc,
-                           (destroy_fn_t) tunneldoc_destroy );
+                           (process1_fn_t) process_tunneldoc,
+                           (destroy1_fn_t) tunneldoc_destroy );
 }
 
 wifi_doc_t* wifi_doc_convert(const void *buf, size_t len)
 {
 	return comp_helper_convert( buf, len, sizeof(tunneldoc_t), "Wifi_SSID_Config", 
                             MSGPACK_OBJECT_ARRAY, true,
-                           (process_fn_t) process_wifi_doc,
-                           (destroy_fn_t) wifi_doc_destroy );
+                           (process1_fn_t) process_wifi_doc,
+                           (destroy1_fn_t) wifi_doc_destroy );
 }
 /* See xdnsdoc.h for details. */
 void tunneldoc_destroy( tunneldoc_t *td )

@@ -28,13 +28,13 @@
 /*                               Data Structures                              */
 /*----------------------------------------------------------------------------*/
 enum {
-    HELPERS_OK = 0,
-    HELPERS_OUT_OF_MEMORY,
-    HELPERS_INVALID_FIRST_ELEMENT,
-    HELPERS_MISSING_WRAPPER
+    T_HELPERS_OK = 0,
+    T_HELPERS_OUT_OF_MEMORY,
+    T_HELPERS_INVALID_FIRST_ELEMENT,
+    T_HELPERS_MISSING_WRAPPER
 };
-typedef int (*process_fn_t)(void *, int, ...);
-typedef void (*destroy_fn_t)(void *);
+typedef int (*process1_fn_t)(void *, int, ...);
+typedef void (*destroy1_fn_t)(void *);
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
@@ -58,11 +58,11 @@ typedef void (*destroy_fn_t)(void *);
 void* comp_helper_convert( const void *buf, size_t len,
                       size_t struct_size, const char *wrapper,
                       msgpack_object_type expect_type, bool optional,
-                      process_fn_t process,
-                      destroy_fn_t destroy );
+                      process1_fn_t process,
+                      destroy1_fn_t destroy );
 void* helper_convert_array( const void *buf, size_t len,
                       size_t struct_size, const char *wrapper,
                       msgpack_object_type expect_type, bool optional,
-                      process_fn_t process,
-                      destroy_fn_t destroy );
+                      process1_fn_t process,
+                      destroy1_fn_t destroy );
 #endif

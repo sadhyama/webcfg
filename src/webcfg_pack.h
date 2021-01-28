@@ -28,17 +28,18 @@
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
 /*----------------------------------------------------------------------------*/
-struct data {
+typedef struct{
     char *name;
     char *value;
     int notify_attribute;
+    uint32_t value_size;
     uint16_t type;
-};
+}dataval_t;
 
-typedef struct data_struct {
+typedef struct{
     size_t count;
-    struct data *data_items;
-} data_t;
+    dataval_t *data_items;
+} data1_t;
 
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
@@ -46,6 +47,6 @@ typedef struct data_struct {
 
 ssize_t webcfgdb_blob_pack(webconfig_db_data_t *webcfgdb, webconfig_tmp_data_t * webcfgtemp, void **data);
 ssize_t webcfgdb_pack( webconfig_db_data_t *packData, void **data, size_t count );
-
+ssize_t webcfg_pack_rootdoc( data1_t *packData, void **data );
 
 #endif

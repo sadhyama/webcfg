@@ -70,6 +70,7 @@ typedef struct {
     uint32_t      version;
     uint16_t      transaction_id;
 } pamparam_t;
+
 /**
  *  This function converts a msgpack buffer into an pamparam_t structure
  *  if possible.

@@ -114,19 +114,19 @@ void test_webcfgpack_unpack()
 //void webcfgPackUnpack(char *blob)
 void webcfgPackUnpack()
 {
-   	data_t *packRootData = NULL;
+   	data1_t *packRootData = NULL;
 	size_t rootPackSize=-1;
 	void *data =NULL;
 	int err;
 	
-	packRootData = ( data_t * ) malloc( sizeof( data_t ) );
+	packRootData = ( data1_t * ) malloc( sizeof( data1_t ) );
 	if(packRootData != NULL)
 	{
-		memset(packRootData, 0, sizeof(data_t));
+		memset(packRootData, 0, sizeof(data1_t));
 
 		packRootData->count = 2;
-		packRootData->data_items = (struct data *) malloc( sizeof(data) * packRootData->count );
-		memset( packRootData->data_items, 0, sizeof(data) * packRootData->count );
+		packRootData->data_items = (dataval_t *) malloc( sizeof(dataval_t) * packRootData->count );
+		memset( packRootData->data_items, 0, sizeof(dataval_t) * packRootData->count );
 
 		/*packRootData->data_items[0].name = strdup("Device.X_RDK_WebConfig.RootConfig.Data");
 		packRootData->data_items[0].value = strdup("true");

@@ -51,6 +51,7 @@ struct webcfg_token {
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
 /*----------------------------------------------------------------------------*/
+static const struct webcfg_token PAM_PARAMETERS   = { .name = "PublicHotspotData", .length = sizeof( "PublicHotspotData" ) - 1 };
 static const struct webcfg_token WEBCFG_DB_PARAMETERS   = { .name = "webcfgdb", .length = sizeof( "webcfgdb" ) - 1 };
 static const struct webcfg_token WEBCFG_BLOB_PARAMETERS   = { .name = "webcfgblob", .length = sizeof( "webcfgblob" ) - 1 };
 static void __msgpack_pack_string( msgpack_packer *pk, const void *string, size_t n );
@@ -321,5 +322,61 @@ ssize_t webcfgdb_pack( webconfig_db_data_t *packData, void **data, size_t count 
 }
 
 
+ssize_t webcfg_pack_rootdoc(data1_t *packData, void **data )
+{
+    size_t rv = -1;
+    msgpack_sbuffer sbuf;
+    msgpack_packer pk;
+    msgpack_sbuffer_init( &sbuf );
+    msgpack_packer_init( &pk, &sbuf, msgpack_sbuffer_write );
+    int i =0;
 
+    if( packData != NULL && packData->count != 0 ) {
+	int count = packData->count;
+	msgpack_pack_map( &pk, 1);
+        __msgpack_pack_string( &pk, PAM_PARAMETERS.name, PAM_PARAMETERS.length );
+	msgpack_pack_array( &pk, count );
+        
+	msgpack_pack_map( &pk, 3); //name, value, type
+
+	for( i = 0; i < count; i++ ) //1 element
+	{
+	    struct webcfg_token PAM_MAP_NAME;
+
+            PAM_MAP_NAME.name = "name";
+            PAM_MAP_NAME.length = strlen( "name" );
+            __msgpack_pack_string_nvp( &pk, &PAM_MAP_NAME, packData->data_items[count].name );
+            
+	    struct webcfg_token PAM_MAP_VALUE;
+
+            PAM_MAP_VALUE.name = "value";
+            PAM_MAP_VALUE.length = strlen( "value" );
+	    __msgpack_pack_string_nvp( &pk, &PAM_MAP_VALUE, packData->data_items[count].value );
+
+	    struct webcfg_token PAM_MAP_TYPE;
+
+            PAM_MAP_TYPE.name = "dataType";
+            PAM_MAP_TYPE.length = strlen( "dataType" );
+             __msgpack_pack_string( &pk, PAM_MAP_TYPE.name, PAM_MAP_TYPE.length );
+	    msgpack_pack_int(&pk, packData->data_items[count].type );
+	}
+
+    } else {
+        printf("parameters is NULL\n" );
+        return rv;
+    }
+
+    if( sbuf.data ) {
+        *data = ( char * ) malloc( sizeof( char ) * sbuf.size );
+
+        if( NULL != *data ) {
+            memcpy( *data, sbuf.data, sbuf.size );
+	    //printf("sbuf.data is %s sbuf.size %ld\n", sbuf.data, sbuf.size);
+            rv = sbuf.size;
+        }
+    }
+
+    msgpack_sbuffer_destroy( &sbuf );
+    return rv;
+}
 

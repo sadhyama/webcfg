@@ -43,13 +43,13 @@ msgpack_object* __finder_comp( const char *name,
 void* comp_helper_convert( const void *buf, size_t len,
                       size_t struct_size, const char *wrapper,
                       msgpack_object_type expect_type, bool optional,
-                      process_fn_t process,
-                      destroy_fn_t destroy )
+                      process1_fn_t process,
+                      destroy1_fn_t destroy )
 {
     void *p = malloc( struct_size );
     if( NULL == p )
     {
-        errno = HELPERS_OUT_OF_MEMORY;
+        errno = T_HELPERS_OUT_OF_MEMORY;
     }
     else
     {
@@ -83,12 +83,12 @@ void* comp_helper_convert( const void *buf, size_t len,
                               ((true == optional) && (NULL == inner)) )
                     {
                          msgpack_unpacked_destroy( &msg );
-                         errno = HELPERS_OK;
+                         errno = T_HELPERS_OK;
                          return p;
                     }
                     else 
                     {
-                         errno = HELPERS_INVALID_FIRST_ELEMENT;
+                         errno = T_HELPERS_INVALID_FIRST_ELEMENT;
                     }
                 }
                 else if( NULL != wrapper && 0 != strcmp(wrapper,"parameters")) 
@@ -102,13 +102,13 @@ void* comp_helper_convert( const void *buf, size_t len,
                               ((true == optional) && (NULL == inner)) )
                     {
                          msgpack_unpacked_destroy( &msg );
-                         errno = HELPERS_OK;
+                         errno = T_HELPERS_OK;
                          return p;
                     }
                     else 
                     {     
                          WebcfgDebug("Invalid first element\n");
-                         errno = HELPERS_INVALID_FIRST_ELEMENT;
+                         errno = T_HELPERS_INVALID_FIRST_ELEMENT;
                     }
                 } 
               }
@@ -166,7 +166,7 @@ msgpack_object* __finder_comp( const char *name,
             }
         }
 	WebcfgDebug("The wrapper %s is missing\n", name);
-     errno = HELPERS_MISSING_WRAPPER;
+     errno = T_HELPERS_MISSING_WRAPPER;
     return NULL;
 }
 

@@ -223,13 +223,13 @@ int readFromFile1(char *filename, char **data, int *len)
 	fseek(fp, 0, SEEK_END);
 	ch_count = ftell(fp);
 	fseek(fp, 0, SEEK_SET);
-	*data = (char *) malloc(sizeof(char) * (ch_count + 1));
+	*data = (char *) malloc(sizeof(char) * (ch_count ));
 	
 	fread(*data, 1, ch_count,fp);
         //fgets(*data,400,fp);
         printf("........data is %s len%lu\n", *data, strlen(*data));
 	*len = ch_count;
-	(*data)[ch_count] ='\0';
+	//(*data)[ch_count] ='\0';
         printf("character count is %d\n",ch_count);
         printf("data is %s len %lu\n", *data, strlen(*data));
 	fclose(fp);
@@ -279,7 +279,7 @@ void test_pam_unpack()
 	packRootData = ( data1_t * ) malloc( sizeof( data1_t ) );
 	if(packRootData != NULL)
 	{
-		printf("sdasdasd\n");
+		printf("went here\n");
 		memset(packRootData, 0, sizeof(data1_t));
 
 		packRootData->count = 2;
@@ -291,6 +291,7 @@ void test_pam_unpack()
 		memset(packRootData->data_items[0].value, 0, sizeof(char) * len1+1);
 		packRootData->data_items[0].value = memcpy(packRootData->data_items[0].value, tunnelfileData, len1+1);
 		packRootData->data_items[0].value[len1] = '\0';
+		printf("went here2\n");
 		packRootData->data_items[0].type = 12;
 
 		packRootData->data_items[1].name = strdup("Device.WiFi.PublicWiFiData");
@@ -301,6 +302,7 @@ void test_pam_unpack()
 		packRootData->data_items[1].type = 12;
 	}
 
+	printf("Before here\n");
 	rootPackSize = webcfg_pack_rootdoc( packRootData, &data );
 	printf("rootPackSize is %ld\n", rootPackSize);
 
@@ -374,6 +376,7 @@ void pamUnpack(char *blob)
 
 			if(pd != NULL)
 			{
+				printf("The transaction id is %d\n", pd->transaction_id);
 				td = tunneldoc_convert( pd->entries[0].value, pd->entries[0].value_size );
 				err = errno;
 				printf( "errno: %s\n", pamdoc_strerror(err) );
@@ -382,27 +385,34 @@ void pamUnpack(char *blob)
 				err = errno;
 				printf( "errno: %s\n", pamdoc_strerror(err) );
 
-				for(i = 0; i<(int) td->entries_count ; i++)
+				if(td != NULL)
 				{
-					printf("td->entries[%d].gre_name is %s\n", i, td->entries[i].gre_name);
-					printf("td->entries[%d].gre_primaryendpoint is %s\n", i, td->entries[i].gre_primaryendpoint);
-					printf("td->entries[%d].gre_secep is %s\n", i, td->entries[i].gre_secep);
-					printf("td->entries[%d].gre_dev is %s\n", i, td->entries[i].gre_dev);
-					printf("td->entries[%d].dscp is %s\n", i, td->entries[i].dscp);
-					printf("td->entries[%d].enable %s\n", i, (1 == td->entries[i].enable)?"true":"false");
-					for(j = 0; j<(int) td->entries[i].table_param->entries_count; j++)
+					for(i = 0; i<(int) td->entries_count ; i++)
 					{
-						printf("td->entries[%d].table_param->entries[%d].vap_name %s\n",i, j, td->entries[i].table_param->entries[j].vap_name);
-						printf("td->entries[%d].table_param->entries[%d].vlan %s\n",i, j,td->entries[i].table_param->entries[j].vlan);
-						printf("td->entries[%d].table_param->entries[%d].bridge %s\n",i, j,td->entries[i].table_param->entries[j].bridge);
-						printf("td->entries[%d].table_param->entries[%d].enable %s\n",i, j,(1 == td->entries[i].table_param->entries[j].enable)?"true":"false");	
+						printf("td->entries[%d].gre_name is %s\n", i, td->entries[i].gre_name);
+						printf("td->entries[%d].gre_primaryendpoint is %s\n", i, td->entries[i].gre_primaryendpoint);
+						printf("td->entries[%d].gre_secep is %s\n", i, td->entries[i].gre_secep);
+						printf("td->entries[%d].gre_dev is %s\n", i, td->entries[i].gre_dev);
+						printf("td->entries[%d].dscp is %s\n", i, td->entries[i].dscp);
+						printf("td->entries[%d].enable %s\n", i, (1 == td->entries[i].enable)?"true":"false");
+						for(j = 0; j<(int) td->entries[i].table_param->entries_count; j++)
+						{
+							printf("td->entries[%d].table_param->entries[%d].vap_name %s\n",i, j, td->entries[i].table_param->entries[j].vap_name);
+							printf("td->entries[%d].table_param->entries[%d].vlan %s\n",i, j,td->entries[i].table_param->entries[j].vlan);
+							printf("td->entries[%d].table_param->entries[%d].bridge %s\n",i, j,td->entries[i].table_param->entries[j].bridge);
+							printf("td->entries[%d].table_param->entries[%d].enable %s\n",i, j,(1 == td->entries[i].table_param->entries[j].enable)?"true":"false");	
+						}
 					}
+					tunneldoc_destroy(td);
+				}
+				if(wd != NULL)
+				{
+					printf("wd->entries_count is %d\n", (int)wd->entries_count);
+					wifi_doc_destroy(wd);
 				}
 				
 			}
 			pamdoc_destroy(pd);
-			tunneldoc_destroy(td);
-			wifi_doc_destroy(wd);
 		}
 	}
 }

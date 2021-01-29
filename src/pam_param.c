@@ -388,37 +388,32 @@ int process_tunnelparams( tdoc_t *e, msgpack_object_map *map )
 int process_pamparams( pparam_t *e, msgpack_object_map *map )
 {
     int left = map->size;
-    uint8_t objects_left = 0x03;
+    uint8_t objects_left = 0x02;
     msgpack_object_kv *p;
 
     p = map->ptr;
-    while( (0 < objects_left) && (0 < left--) ) {
-        if( MSGPACK_OBJECT_STR == p->key.type ) {
-            if( MSGPACK_OBJECT_POSITIVE_INTEGER == p->val.type ) {
-                if( 0 == match(p, "dataType") ) {
-                    if( UINT16_MAX < p->val.via.u64 ) {
-                        errno = INVALID_DATATYPE;
-                        return -1;
-                    } else {
-                        e->type = (uint16_t) p->val.via.u64;
-                    }
-                    objects_left &= ~(1 << 0);
-                }
-            } else if( MSGPACK_OBJECT_STR == p->val.type ) {
-                if( 0 == match(p, "name") ) {
-                    e->name = strndup( p->val.via.str.ptr, p->val.via.str.size );
-                    objects_left &= ~(1 << 1);
-                }
-		if( 0 == match(p, "value")) {
-			WebcfgDebug("blob size update\n");
-			e->value = malloc(sizeof(char) * p->val.via.str.size+1 );
-			memset( e->value, 0, sizeof(char) * p->val.via.str.size+1);
-			e->value = memcpy(e->value, p->val.via.str.ptr, p->val.via.str.size+1 );
-			e->value[p->val.via.str.size] = '\0';
-			e->value_size =(uint32_t) p->val.via.str.size;
-			WebcfgDebug("e->value_size is %lu\n", (long)e->value_size);
-			objects_left &= ~(1 << 2);
-                }
+    while( (0 < objects_left) && (0 < left--) )
+	{
+        if( MSGPACK_OBJECT_STR == p->key.type )
+	{
+        	if( MSGPACK_OBJECT_STR == p->val.type )
+		{
+		        if( 0 == match(p, "name") )
+			{
+		            e->name = strndup( p->val.via.str.ptr, p->val.via.str.size );
+		            objects_left &= ~(1 << 0);
+		        }
+			if( 0 == match(p, "value"))
+			{
+				WebcfgDebug("blob size update\n");
+				e->value = malloc(sizeof(char) * p->val.via.str.size+1 );
+				memset( e->value, 0, sizeof(char) * p->val.via.str.size+1);
+				e->value = memcpy(e->value, p->val.via.str.ptr, p->val.via.str.size+1 );
+				e->value[p->val.via.str.size] = '\0';
+				e->value_size =(uint32_t) p->val.via.str.size;
+				WebcfgDebug("e->value_size is %lu\n", (long)e->value_size);
+				objects_left &= ~(1 << 1);
+		        }
 	
             }
         }
@@ -471,6 +466,7 @@ int process_pamdoc( pamparam_t *pd,int num, ... )
 			if( MSGPACK_OBJECT_MAP != array->ptr[i].type )
 			{
 				errno = INVALID_OBJECT;
+				WebcfgError("Invalid object\n");
 				return -1;
 			}
 			if( 0 != process_pamparams(&pd->entries[i], &array->ptr[i].via.map))

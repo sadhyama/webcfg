@@ -75,7 +75,7 @@ void* comp_helper_convert( const void *buf, size_t len,
                 msgpack_object *version;
                 msgpack_object *transaction_id;
                 
-                if( NULL != wrapper && 0 == strncmp(wrapper,"parameters",strlen("parameters"))) 
+                if( NULL != wrapper && 0 != strncmp(wrapper,"PublicHotspotData",strlen("PublicHotspotData"))) 
                 {
                     inner = __finder_comp( wrapper, expect_type, &msg.data.via.map );
                     
@@ -91,7 +91,7 @@ void* comp_helper_convert( const void *buf, size_t len,
                          errno = T_HELPERS_INVALID_FIRST_ELEMENT;
                     }
                 }
-                else if( NULL != wrapper && 0 != strcmp(wrapper,"parameters")) 
+                else if( NULL != wrapper && 0 == strncmp(wrapper,"PublicHotspotData",strlen("PublicHotspotData"))) 
                 {
                     inner = __finder_comp( wrapper, expect_type, &msg.data.via.map );
                     subdoc_name =  __finder_comp( "subdoc_name", expect_type, &msg.data.via.map );

@@ -322,7 +322,7 @@ ssize_t webcfgdb_pack( webconfig_db_data_t *packData, void **data, size_t count 
 }
 
 
-ssize_t webcfg_pack_rootdoc(data1_t *packData, void **data )
+ssize_t webcfg_pack_rootdoc(const data1_t *packData, void **data )
 {
     size_t rv = -1;
     msgpack_sbuffer sbuf;
@@ -337,28 +337,22 @@ ssize_t webcfg_pack_rootdoc(data1_t *packData, void **data )
         __msgpack_pack_string( &pk, PAM_PARAMETERS.name, PAM_PARAMETERS.length );
 	msgpack_pack_array( &pk, count );
         
-	msgpack_pack_map( &pk, 3); //name, value, type
-
 	for( i = 0; i < count; i++ ) //1 element
 	{
+	msgpack_pack_map( &pk, 2); //name, value, type
 	    struct webcfg_token PAM_MAP_NAME;
 
             PAM_MAP_NAME.name = "name";
             PAM_MAP_NAME.length = strlen( "name" );
-            __msgpack_pack_string_nvp( &pk, &PAM_MAP_NAME, packData->data_items[count].name );
+		printf("The count is %d\n", count);
+            __msgpack_pack_string_nvp( &pk, &PAM_MAP_NAME, packData->data_items[i].name );
             
 	    struct webcfg_token PAM_MAP_VALUE;
 
             PAM_MAP_VALUE.name = "value";
             PAM_MAP_VALUE.length = strlen( "value" );
-	    __msgpack_pack_string_nvp( &pk, &PAM_MAP_VALUE, packData->data_items[count].value );
+	    __msgpack_pack_string_nvp( &pk, &PAM_MAP_VALUE, packData->data_items[i].value );
 
-	    struct webcfg_token PAM_MAP_TYPE;
-
-            PAM_MAP_TYPE.name = "dataType";
-            PAM_MAP_TYPE.length = strlen( "dataType" );
-             __msgpack_pack_string( &pk, PAM_MAP_TYPE.name, PAM_MAP_TYPE.length );
-	    msgpack_pack_int(&pk, packData->data_items[count].type );
 	}
 
     } else {

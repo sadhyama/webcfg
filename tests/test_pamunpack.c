@@ -312,7 +312,7 @@ void test_pam_unpack()
 		printf("blobbuff %s blob len %lu\n", blobbuff, strlen(blobbuff));
 
 	}
-	encodedData =webcfg_appendeddoc( "PAM", 52425212, blobbuff, rootPackSize, &doc_transId);
+	encodedData =webcfg_appendeddoc( "PublicHotspotData", 52425212, blobbuff, rootPackSize, &doc_transId);
 	pamUnpack(encodedData);
 }
 
@@ -323,6 +323,7 @@ void pamUnpack(char *blob)
 	wifi_doc_t* wd = NULL;
 	int err;
 	int i ,j =0;
+	int td_count = 0;
 
 	if(blob != NULL)
 	{
@@ -400,14 +401,24 @@ void pamUnpack(char *blob)
 							printf("td->entries[%d].table_param->entries[%d].vap_name %s\n",i, j, td->entries[i].table_param->entries[j].vap_name);
 							printf("td->entries[%d].table_param->entries[%d].vlan %s\n",i, j,td->entries[i].table_param->entries[j].vlan);
 							printf("td->entries[%d].table_param->entries[%d].bridge %s\n",i, j,td->entries[i].table_param->entries[j].bridge);
-							printf("td->entries[%d].table_param->entries[%d].enable %s\n",i, j,(1 == td->entries[i].table_param->entries[j].enable)?"true":"false");	
+							printf("td->entries[%d].table_param->entries[%d].enable %s\n",i, j,(1 == td->entries[i].table_param->entries[j].enable)?"true":"false");
+							td_count = td->entries[i].table_param->entries_count;
 						}
 					}
+					printf("td entries count is %d\n", td_count);
 					tunneldoc_destroy(td);
 				}
 				if(wd != NULL)
 				{
-					printf("wd->entries_count is %d\n", (int)wd->entries_count);
+					printf("WiFi wd->entries_count is %d\n", (int)wd->entries_count);
+					if(td_count == (int)wd->entries_count)
+					{
+						printf("tunnel and wifi vap count matching\n");
+					}
+					else
+					{
+						printf("tunnel and wifi vap count NOT matching!!\n");
+					}
 					wifi_doc_destroy(wd);
 				}
 				

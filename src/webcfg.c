@@ -397,7 +397,7 @@ int get_global_supplementarySync()
 void processWebconfgSync(int status, char* docname)
 {
 	int retry_count=0;
-	int r_count=0;
+	//int r_count=0;
 	int configRet = -1;
 	char *webConfigData = NULL;
 	long res_code;
@@ -423,7 +423,7 @@ void processWebconfgSync(int status, char* docname)
 			retry_count=0;
 			break;
 		}
-		configRet = webcfg_http_request(&webConfigData, r_count, status, &res_code, &transaction_uuid, ct, &dataSize, docname);
+		configRet = webcfg_http_request(&webConfigData, retry_count, status, &res_code, &transaction_uuid, ct, &dataSize, docname);
 		if(configRet == 0)
 		{
 			rv = handlehttpResponse(res_code, webConfigData, retry_count, transaction_uuid, ct, dataSize);

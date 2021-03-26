@@ -44,6 +44,25 @@ msgpack_object* __finder( const char *name,
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
+//To print and store the msgpack output to a file
+void msgpack_print(const void *data, size_t len)
+{
+      if( NULL != data && 0 < len )
+      {
+          size_t offset = 0;
+          FILE *fd = fopen("/tmp/aker_output.bin", "w+");
+          msgpack_unpacked msg;
+          msgpack_unpack_return msgpk_rv;
+          msgpack_unpacked_init( &msg );
+
+          msgpk_rv = msgpack_unpack_next( &msg, (const char*) data, len, &offset );
+          WebcfgInfo("msgpk_rv value is %d\n",msgpk_rv);
+          msgpack_object obj = msg.data;
+          msgpack_object_print(fd, obj);
+          msgpack_unpacked_destroy( &msg );
+          fclose(fd);
+      }
+}
 void* helper_convert( const void *buf, size_t len,
                       size_t struct_size, const char *wrapper,
                       msgpack_object_type expect_type, bool optional,
@@ -53,6 +72,7 @@ void* helper_convert( const void *buf, size_t len,
     void *p = malloc( struct_size );
     if( NULL == p ) {
         errno = HELPERS_OUT_OF_MEMORY;
+	WebcfgError("HELPERS_OUT_OF_MEMORY\n");
     } else {
         memset( p, 0, struct_size );
 
@@ -65,13 +85,17 @@ void* helper_convert( const void *buf, size_t len,
 
             /* The outermost wrapper MUST be a map. */
             mp_rv = msgpack_unpack_next( &msg, (const char*) buf, len, &offset );
-	    //msgpack_object obj = msg.data;
-	    //msgpack_object_print(stdout, obj);
-	    //WebcfgDebug("\nMSGPACK_OBJECT_MAP is %d  msg.data.type %d\n", MSGPACK_OBJECT_MAP, msg.data.type);
+	    msgpack_object obj = msg.data;
+	    msgpack_object_print(stdout, obj);
+	    WebcfgInfo("msgpack_print. len %lu\n", len);
+	    msgpack_print(buf, len);
+	    WebcfgInfo("msgpack unpack ret %d\n", mp_rv);
+	    WebcfgInfo("\nMSGPACK_OBJECT_MAP is %d  msg.data.type %d\n", MSGPACK_OBJECT_MAP, msg.data.type);
 
             if( (MSGPACK_UNPACK_SUCCESS == mp_rv) && (0 != offset) &&
                 (MSGPACK_OBJECT_MAP == msg.data.type) )
             {
+		WebcfgInfo("MSGPACK_UNPACK_SUCCESS\n");
                 msgpack_object *inner;
 
                 inner = &msg.data;
@@ -84,19 +108,22 @@ void* helper_convert( const void *buf, size_t len,
                 {
                     msgpack_unpacked_destroy( &msg );
                     errno = HELPERS_OK;
+		    WebcfgInfo("HELPERS_OK\n");
                     return p;
                 }
             } else {
                 errno = HELPERS_INVALID_FIRST_ELEMENT;
+		WebcfgError("HELPERS_INVALID_FIRST_ELEMENT\n");
             }
 
             msgpack_unpacked_destroy( &msg );
 
             (destroy)( p );
             p = NULL;
+	    WebcfgError("helper_convert returns NULL\n");
         }
     }
-
+    WebcfgInfo("End helper_convert\n");
     return p;
 }
 
@@ -120,7 +147,7 @@ msgpack_object* __finder( const char *name,
             }
         }
     }
-
+    WebcfgError("HELPERS_MISSING_WRAPPER\n");
     errno = HELPERS_MISSING_WRAPPER;
     return NULL;
 }

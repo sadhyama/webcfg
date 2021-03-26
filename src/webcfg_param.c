@@ -54,6 +54,7 @@ int process_webcfgparam( webcfgparam_t *pm, msgpack_object *obj );
 /* See webcfgparam.h for details. */
 webcfgparam_t* webcfgparam_convert( const void *buf, size_t len )
 {
+    WebcfgInfo("In webcfgparam_convert\n");
     return helper_convert( buf, len, sizeof(webcfgparam_t), "parameters",
                            MSGPACK_OBJECT_ARRAY, true,
                            (process_fn_t) process_webcfgparam,
@@ -129,6 +130,7 @@ int process_params( wparam_t *e, msgpack_object_map *map )
                 if( 0 == match(p, "dataType") ) {
                     if( UINT16_MAX < p->val.via.u64 ) {
                         errno = PM_INVALID_DATATYPE;
+			WebcfgError("PM_INVALID_DATATYPE\n");
                         return -1;
                     } else {
                         e->type = (uint16_t) p->val.via.u64;
@@ -175,10 +177,12 @@ int process_webcfgparam( webcfgparam_t *pm, msgpack_object *obj )
     if( 0 < array->size ) {
         size_t i;
 
+	WebcfgInfo("array->size %d\n", (int)array->size);
         pm->entries_count = array->size;
         pm->entries = (wparam_t *) malloc( sizeof(wparam_t) * pm->entries_count );
         if( NULL == pm->entries ) {
             pm->entries_count = 0;
+	    WebcfgError("pm->entries is NULL\n");
             return -1;
         }
 
@@ -186,6 +190,7 @@ int process_webcfgparam( webcfgparam_t *pm, msgpack_object *obj )
         for( i = 0; i < pm->entries_count; i++ ) {
             if( MSGPACK_OBJECT_MAP != array->ptr[i].type ) {
                 errno = PM_INVALID_PM_OBJECT;
+		WebcfgError("PM_INVALID_PM_OBJECT . object is not map\n");
                 return -1;
             }
             if( 0 != process_params(&pm->entries[i], &array->ptr[i].via.map) ) {

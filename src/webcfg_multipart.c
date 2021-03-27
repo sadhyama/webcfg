@@ -207,8 +207,7 @@ WEBCFG_STATUS webcfg_http_request(char **configData, int r_count, int status, lo
 		if(strlen(docList) > 0)
 		{
 			WebcfgInfo("docList is %s\n", docList);
-			//snprintf(syncURL, MAX_BUF_SIZE, "%s?group_id=%s", webConfigURL, docList);
-			strcpy(syncURL, webConfigURL);
+			snprintf(syncURL, MAX_BUF_SIZE, "%s?group_id=%s", webConfigURL, docList);
 			WEBCFG_FREE(webConfigURL);
 			WebcfgDebug("syncURL is %s\n", syncURL);
 			webConfigURL =strdup( syncURL);
@@ -1304,8 +1303,6 @@ void createCurlHeader( struct curl_slist *list, struct curl_slist **header_list,
 	if(version_header !=NULL)
 	{
 		refreshConfigVersionList(version, 0);
-		strcpy(version, "2698599590,56857233,773805505,2333894998");
-		//strcpy(version, "0,1790814978,1874871438,3522035722,2845667022,3929265727,3671120695,2605450606,2192982180");
 		snprintf(version_header, MAX_BUF_SIZE, "IF-NONE-MATCH:%s", ((strlen(version)!=0) ? version : "0"));
 		WebcfgInfo("version_header formed %s\n", version_header);
 		list = curl_slist_append(list, version_header);

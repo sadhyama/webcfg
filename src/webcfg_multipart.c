@@ -207,7 +207,8 @@ WEBCFG_STATUS webcfg_http_request(char **configData, int r_count, int status, lo
 		if(strlen(docList) > 0)
 		{
 			WebcfgInfo("docList is %s\n", docList);
-			snprintf(syncURL, MAX_BUF_SIZE, "%s?group_id=%s", webConfigURL, docList);
+			//snprintf(syncURL, MAX_BUF_SIZE, "%s?group_id=%s", webConfigURL, docList);
+			strcpy(syncURL, webConfigURL);
 			WEBCFG_FREE(webConfigURL);
 			WebcfgDebug("syncURL is %s\n", syncURL);
 			webConfigURL =strdup( syncURL);
@@ -317,7 +318,7 @@ WEBCFG_STATUS webcfg_http_request(char **configData, int r_count, int status, lo
 
 						*configData=data.data;
 						*dataSize = data.size;
-						WebcfgDebug("Data size is %d\n",(int)data.size);
+						WebcfgInfo("Data size is %d\n",(int)data.size);
 						rv = 1;
 					}
 				}
@@ -414,7 +415,7 @@ WEBCFG_STATUS parseMultipartDocument(void *config_data, char *ct , size_t data_s
 				while(0 != num_of_parts % 2)
 				{
 					ptr_lb1 = memchr(ptr_lb+1, '\n', data_size - (ptr_lb - str_body));
-					if(0 != memcmp(ptr_lb1-1, "\r",1 )){
+					while(0 != memcmp(ptr_lb1-1, "\r",1 )){
 					ptr_lb1 = memchr(ptr_lb1+1, '\n', data_size - (ptr_lb - str_body));
 					}
 					index2 = ptr_lb1-str_body;
@@ -1303,6 +1304,8 @@ void createCurlHeader( struct curl_slist *list, struct curl_slist **header_list,
 	if(version_header !=NULL)
 	{
 		refreshConfigVersionList(version, 0);
+		strcpy(version, "2698599590,56857233,773805505,2333894998");
+		//strcpy(version, "0,1790814978,1874871438,3522035722,2845667022,3929265727,3671120695,2605450606,2192982180");
 		snprintf(version_header, MAX_BUF_SIZE, "IF-NONE-MATCH:%s", ((strlen(version)!=0) ? version : "0"));
 		WebcfgInfo("version_header formed %s\n", version_header);
 		list = curl_slist_append(list, version_header);
@@ -1639,10 +1642,14 @@ void parse_multipart(char *ptr, int no_of_bytes, multipartdocs_t *m)
 	}
 	else if(strstr(ptr,"parameters"))
 	{
+		WebcfgInfo("no_of_bytes is %d\n", no_of_bytes);
 		m->data = malloc(sizeof(char) * no_of_bytes );
 		m->data = memcpy(m->data, ptr, no_of_bytes );
 		//store doc size of each sub doc
+		WebcfgInfo("m->data is %s\n", m->data);
 		m->data_size = no_of_bytes;
+		WebcfgInfo("m->data is %lu\n", m->data_size);
+		writeToDBFile("/tmp/doc.bin",(char *)m->data,m->data_size);
 	}
 }
 

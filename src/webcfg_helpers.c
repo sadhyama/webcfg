@@ -53,6 +53,7 @@ void* helper_convert( const void *buf, size_t len,
     void *p = malloc( struct_size );
     if( NULL == p ) {
         errno = HELPERS_OUT_OF_MEMORY;
+	WebcfgError("HELPERS_OUT_OF_MEMORY\n");
     } else {
         memset( p, 0, struct_size );
 
@@ -88,6 +89,8 @@ void* helper_convert( const void *buf, size_t len,
                 }
             } else {
                 errno = HELPERS_INVALID_FIRST_ELEMENT;
+		WebcfgError("HELPERS_INVALID_FIRST_ELEMENT\n");
+		WebcfgError("MSGPACK_OBJECT_MAP is %d msg.data.type %d len %lu unpack ret %d\n", MSGPACK_OBJECT_MAP, msg.data.type, len, mp_rv);
             }
 
             msgpack_unpacked_destroy( &msg );
@@ -120,7 +123,7 @@ msgpack_object* __finder( const char *name,
             }
         }
     }
-
+    WebcfgError("HELPERS_MISSING_WRAPPER\n");
     errno = HELPERS_MISSING_WRAPPER;
     return NULL;
 }

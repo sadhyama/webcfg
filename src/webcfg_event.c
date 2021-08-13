@@ -926,6 +926,7 @@ WEBCFG_STATUS retryMultipartSubdoc(webconfig_tmp_data_t *docNode, char *docName)
 	multipartdocs_t *gmp = NULL;
 	uint16_t err = 0;
 	char * errmsg = NULL;
+	int sendMsgsize = 0;
 
 	gmp = get_global_mp();
 
@@ -969,7 +970,8 @@ WEBCFG_STATUS retryMultipartSubdoc(webconfig_tmp_data_t *docNode, char *docName)
 						{
 							char *appended_doc = NULL;
 							WebcfgDebug("B4 webcfg_appendeddoc\n");
-							appended_doc = webcfg_appendeddoc( gmp->name_space, gmp->etag, pm->entries[i].value, pm->entries[i].value_size, &doc_transId);
+							appended_doc = webcfg_appendeddoc( gmp->name_space, gmp->etag, pm->entries[i].value, pm->entries[i].value_size, &doc_transId,&sendMsgsize);
+							WebcfgInfo("sendMsgsize is %d\n", sendMsgsize);
 							WebcfgDebug("webcfg_appendeddoc doc_transId is %hu\n", doc_transId);
 							reqParam[i].name = strdup(pm->entries[i].name);
 							WebcfgDebug("appended_doc length: %zu\n", strlen(appended_doc));

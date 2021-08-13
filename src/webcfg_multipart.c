@@ -33,6 +33,13 @@
 #include <uuid/uuid.h>
 #include <math.h>
 #include <unistd.h>
+/*
+webcfg rbus registration to test feasibility of sendMessage api.
+*/
+
+#include <rbus/rbus.h>
+
+int rbusTest = 0;
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
@@ -552,7 +559,8 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 	int current_doc_count = 0;
 	int err = 0;
 	char * errmsg = NULL;
-	
+	void *buff = NULL;
+	int sendMsgSize = 0;
 
 	mp_count = get_multipartdoc_count();
 	if(transaction_id !=NULL)
@@ -652,18 +660,32 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 					if(pm->entries[i].type == WDMP_BLOB)
 					{
 						char *appended_doc = NULL;
-						appended_doc = webcfg_appendeddoc( mp->name_space, mp->etag, pm->entries[i].value, pm->entries[i].value_size, &doc_transId);
+						appended_doc = webcfg_appendeddoc( mp->name_space, mp->etag, pm->entries[i].value, pm->entries[i].value_size, &doc_transId, &sendMsgSize);
 						if(appended_doc != NULL)
 						{
-							WebcfgDebug("webcfg_appendeddoc doc_transId : %hu\n", doc_transId);
+							WebcfgInfo("webcfg_appendeddoc doc_transId : %hu\n", doc_transId);
+							WebcfgInfo("sendMsgSize is %d..\n", sendMsgSize);
 							if(pm->entries[i].name !=NULL)
 							{
 								reqParam[i].name = strdup(pm->entries[i].name);
 							}
-							WebcfgDebug("appended_doc length: %zu\n", strlen(appended_doc));
-							reqParam[i].value = strdup(appended_doc);
-							reqParam[i].type = WDMP_BASE64;
-							WEBCFG_FREE(appended_doc);
+							WebcfgInfo("appended_doc length: %zu\n", strlen(appended_doc));
+							if(strcmp(mp->name_space, "portforwarding") == 0)
+							{
+							      //disable string operation as it is binary data.
+								reqParam[i].value = appended_doc;
+								reqParam[i].type = WDMP_BASE64;
+								//WEBCFG_FREE(appended_doc);
+								buff = reqParam[i].value;
+								rbusTest =1;
+								WebcfgInfo("rbusTest is 1\n");
+							}
+							else
+							{
+								reqParam[i].value = strdup(appended_doc);
+								reqParam[i].type = WDMP_BASE64;
+								WEBCFG_FREE(appended_doc);
+							}
 						}
 						//Update doc trans_id to validate events.
 						WebcfgDebug("Update doc trans_id to validate events.\n");
@@ -701,7 +723,45 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 				if((checkAndUpdateTmpRetryCount(subdoc_node, mp->name_space))== WEBCFG_SUCCESS)
 				{
 					WebcfgInfo("WebConfig SET Request\n");
-					setValues(reqParam, paramCount, ATOMIC_SET_WEBCONFIG, NULL, NULL, &ret, &ccspStatus);
+					if(rbusTest)
+					{
+						WebcfgInfo("B4 sendMessage\n");
+						rbusError_t err;
+						rbusHandle_t rbus_handle;
+						char topic[64] = "webconfig.pam.portforwarding";
+						rbusMessage_t msg;
+
+						err = rbus_open(&rbus_handle, "webconfig");
+						if (err)
+						{
+							WebcfgError("rbus_open:%s\n", rbusError_ToString(err));
+							return 0;
+						}
+
+						msg.topic = (char const*)topic;
+						msg.data = (uint8_t*)buff;
+						msg.length = sendMsgSize;
+						WebcfgInfo("msg.topic %s, msg.length %d\n", msg.topic, msg.length );
+						WebcfgInfo("msg.data is %s\n", (char*)msg.data);
+						err = rbusMessage_Send(rbus_handle, &msg, RBUS_MESSAGE_CONFIRM_RECEIPT);
+						if (err)
+						{
+							WebcfgError("rbusMessage_Send failed:%s\n", rbusError_ToString(err));
+						}
+						else
+						{
+							WebcfgInfo("rbusMessage_Send success\n");
+							ret = WDMP_SUCCESS;
+						}
+						rbus_close(rbus_handle);
+						rbusTest = 0;
+						WebcfgInfo("sendMessage End\n");
+					}
+					else
+					{
+						WebcfgInfo("B4 setValues\n");
+						setValues(reqParam, paramCount, ATOMIC_SET_WEBCONFIG, NULL, NULL, &ret, &ccspStatus);
+					}
 					if(ret == WDMP_SUCCESS)
 					{
 						WebcfgInfo("setValues success. ccspStatus : %d\n", ccspStatus);

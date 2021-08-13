@@ -52,7 +52,7 @@ ssize_t webcfg_pack_appenddoc(const appenddoc_t *appenddocData,void **data);
 
 size_t appendWebcfgEncodedData( void **appendData, void *encodedBuffer, size_t encodedSize, void *metadataPack, size_t metadataSize );
 
-char * webcfg_appendeddoc(char * subdoc_name, uint32_t version, char * blob_data, size_t blob_size, uint16_t *trans_id);
+char * webcfg_appendeddoc(char * subdoc_name, uint32_t version, char * blob_data, size_t blob_size, uint16_t *trans_id, int *embPackSize);
 
 uint16_t generateRandomId();
 

@@ -209,7 +209,7 @@ size_t appendWebcfgEncodedData( void **appendData, void *encodedBuffer, size_t e
     return -1;
 }
 
-char * webcfg_appendeddoc(char * subdoc_name, uint32_t version, char * blob_data, size_t blob_size, uint16_t *trans_id)
+char * webcfg_appendeddoc(char * subdoc_name, uint32_t version, char * blob_data, size_t blob_size, uint16_t *trans_id, int *embPackSize)
 {
     appenddoc_t *appenddata = NULL;
     size_t appenddocPackSize = -1;
@@ -238,13 +238,23 @@ char * webcfg_appendeddoc(char * subdoc_name, uint32_t version, char * blob_data
 
     	embeddeddocPackSize = appendWebcfgEncodedData(&embeddeddocdata, (void *)blob_data, blob_size, appenddocdata, appenddocPackSize);
     	WebcfgInfo("appenddocPackSize: %zu, blobSize: %zu, embeddeddocPackSize: %zu\n", appenddocPackSize, blob_size, embeddeddocPackSize);
+	*embPackSize = (int)embeddeddocPackSize;
+	WebcfgInfo("*embPackSize is %d\n", *embPackSize);
     	WebcfgDebug("The embedded doc data is %s\n",(char*)embeddeddocdata);
 	WEBCFG_FREE(appenddocdata);
-   	finaldocdata = base64blobencoder((char *)embeddeddocdata, embeddeddocPackSize);
-    	WebcfgDebug("The encoded append doc is %s\n",finaldocdata);
-	WEBCFG_FREE(embeddeddocdata);
+	if(strcmp( subdoc_name, "portforwarding") == 0)
+	{
+		WebcfgInfo("subdoc_name is portforwarding , skipping base64 encode\n");
+		finaldocdata = (char*) embeddeddocdata;
+	}
+	else
+	{
+		finaldocdata = base64blobencoder((char *)embeddeddocdata, embeddeddocPackSize);
+		WebcfgDebug("The encoded append doc is %s\n",finaldocdata);
+		WEBCFG_FREE(embeddeddocdata);
+	}
     }
-    
+    WebcfgInfo("webcfg_appendeddoc end\n");
     return finaldocdata;
 }
 

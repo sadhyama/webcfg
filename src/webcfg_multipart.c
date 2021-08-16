@@ -670,7 +670,7 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 								reqParam[i].name = strdup(pm->entries[i].name);
 							}
 							WebcfgInfo("appended_doc length: %zu\n", strlen(appended_doc));
-							if(strcmp(mp->name_space, "portforwarding") == 0)
+							if((strcmp(mp->name_space, "portforwarding") == 0) || (strcmp(mp->name_space, "privatessid") == 0))
 							{
 							      //disable string operation as it is binary data.
 								reqParam[i].value = appended_doc;
@@ -729,6 +729,12 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 						rbusError_t err;
 						rbusHandle_t rbus_handle;
 						char topic[64] = "webconfig.pam.portforwarding";
+
+						//To test error case when listener not found.
+						if(strcmp(mp->name_space, "privatessid") == 0)
+						{
+							strcpy(topic, "webconfig.wifi.privatessid");
+						}
 						rbusMessage_t msg;
 
 						err = rbus_open(&rbus_handle, "webconfig");

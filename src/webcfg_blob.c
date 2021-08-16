@@ -242,9 +242,9 @@ char * webcfg_appendeddoc(char * subdoc_name, uint32_t version, char * blob_data
 	WebcfgInfo("*embPackSize is %d\n", *embPackSize);
     	WebcfgDebug("The embedded doc data is %s\n",(char*)embeddeddocdata);
 	WEBCFG_FREE(appenddocdata);
-	if(strcmp( subdoc_name, "portforwarding") == 0)
+	if((strcmp( subdoc_name, "portforwarding") == 0) || (strcmp(subdoc_name, "privatessid") == 0))
 	{
-		WebcfgInfo("subdoc_name is portforwarding , skipping base64 encode\n");
+		WebcfgInfo("subdoc_name is %s , skipping base64 encode\n", subdoc_name);
 		finaldocdata = (char*) embeddeddocdata;
 	}
 	else

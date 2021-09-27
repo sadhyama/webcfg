@@ -42,7 +42,7 @@ endif()
 #Support webconfig independent bin for new design
 if (WEBCONFIG_BIN_SUPPORT)
 add_executable(webconfig ${SOURCES} ${HEADERS})
-set_property(TARGET ${PROJ_WEBCFG} PROPERTY C_STANDARD 99)
+set_property(TARGET webconfig PROPERTY C_STANDARD 99)
 set(COMMON_LIBS -lwrp-c -lpthread -lwdmp-c -lmsgpackc -ltrower-base64 -lm -lcjson -lrt -luuid -llibparodus -lnanomsg -lcimplog -lcurl -lrbus -lrbus-core)
 target_link_libraries (webconfig ${CMAKE_THREAD_LIBS_INIT} ${COMMON_LIBS})
 install (TARGETS webconfig DESTINATION bin)

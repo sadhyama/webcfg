@@ -804,7 +804,7 @@ rbusError_t rbusWebcfgEventHandler(rbusHandle_t handle, rbusProperty_t prop, rbu
 			char eventMsg[128]= {'\0'};
 			webcfgStrncpy(eventMsg, data, sizeof(eventMsg));
 			WEBCFG_FREE(data);
-			WebcfgInfo("Received msg %s from topic webconfigSignal\n", eventMsg);
+			WebcfgInfo("Received msg %s from topic webconfig.signal\n", eventMsg);
 
 			webcfgCallback(eventMsg, NULL);
 		}

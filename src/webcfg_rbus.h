@@ -45,7 +45,7 @@
 
 #define WEBCFG_COMPONENT_NAME "webconfig"
 #define MAX_PARAMETERNAME_LEN			4096
-#define WEBCFG_EVENT_NAME "webconfigSignal"
+#define WEBCFG_EVENT_NAME "webconfig.signal"
 
 // Data elements provided by webconfig
 #define WEBCFG_RFC_PARAM "Device.X_RDK_WebConfig.RfcEnable"

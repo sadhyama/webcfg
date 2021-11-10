@@ -389,7 +389,6 @@ rbusError_t webcfgDataGetHandler(rbusHandle_t handle, rbusProperty_t property, r
 		}
 	}
         rbusProperty_SetValue(property, value);
-	WebcfgDebug("URL value fetched is %s\n", value);
         rbusValue_Release(value);
 
     }
@@ -419,7 +418,6 @@ rbusError_t webcfgDataGetHandler(rbusHandle_t handle, rbusProperty_t property, r
             rbusValue_SetString(value, "");
         }
         rbusProperty_SetValue(property, value);
-        WebcfgDebug("BinData value fetched is %s\n", value);
         rbusValue_Release(value);
     }
     	else if(strncmp(propertyName, WEBCFG_SUPPORTED_DOCS_PARAM, maxParamLen) == 0)
@@ -518,7 +516,6 @@ rbusError_t webcfgDataGetHandler(rbusHandle_t handle, rbusProperty_t property, r
 		}
 	}
         rbusProperty_SetValue(property, value);
-	WebcfgDebug("URL value fetched is %s\n", value);
         rbusValue_Release(value);
 
     }else if(strncmp(propertyName, WEBCFG_FORCESYNC_PARAM, maxParamLen) == 0) {
@@ -527,7 +524,6 @@ rbusError_t webcfgDataGetHandler(rbusHandle_t handle, rbusProperty_t property, r
         rbusValue_Init(&value);
         rbusValue_SetString(value, "");
         rbusProperty_SetValue(property, value);
-	WebcfgDebug("forceSyncVal value fetched is %s\n", value);
         rbusValue_Release(value);
 
 	if(!RFC_ENABLE)
@@ -726,7 +722,7 @@ int mapRbusToCcspStatus(int Rbus_error_code)
 
 void setValues_rbus(const param_t paramVal[], const unsigned int paramCount, const int setType,char *transactionId, money_trace_spans *timeSpan, WDMP_STATUS *retStatus, int *ccspRetStatus)
 {
-	int cnt = 0;
+	unsigned int cnt = 0;
 	int isInvalid = 0;
 	bool isCommit = true;
 	int sessionId = 0;
@@ -741,6 +737,10 @@ void setValues_rbus(const param_t paramVal[], const unsigned int paramCount, con
 		WebcfgError("setValues_rbus Failed as rbus_handle is not initialized\n");
 		return;
 	}
+
+	WebcfgDebug("setValues_rbus setType %d\n", setType);
+	WebcfgDebug("setValues_rbus transactionId %s\n",transactionId);
+	WebcfgDebug("setValues_rbus timeSpan %p\n",timeSpan);
 
 	for(cnt=0; cnt<paramCount; cnt++)
 	{
@@ -815,16 +815,19 @@ void getValues_rbus(const char *paramName[], const unsigned int paramCount, int 
 	char* paramValue = NULL;
 	char *pName = NULL;
 	int i =0;
-	int val_size = 0;
+	unsigned int val_size = 0;
 	rbusValue_t paramValue_t = NULL;
 	rbusValueType_t type_t;
-	int cnt=0;
+	unsigned int cnt=0;
 	*retStatus = WDMP_FAILURE;
 
 	for(cnt = 0; cnt < paramCount; cnt++)
 	{
 		WebcfgDebug("rbus_getExt paramName[%d] : %s paramCount %d\n",cnt,paramName[cnt], paramCount);
 	}
+
+	WebcfgDebug("setValues_rbus index %d\n", index);
+	WebcfgDebug("getValues_rbus timeSpan %p\n",timeSpan);
 
 	if(!rbus_handle)
 	{

@@ -209,7 +209,7 @@ ExternalProject_Add(rbus-core
      PREFIX ${CMAKE_CURRENT_BINARY_DIR}/_prefix/rbus-core
      GIT_REPOSITORY https://github.com/rdkcmf/rbuscore.git
      GIT_TAG rdk-next
-     CMAKE_ARGS += DBUILD_FOR_DESKTOP=ON -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}
+     CMAKE_ARGS += -DBUILD_FOR_DESKTOP=ON -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}
                    -DBUILD_TESTING=OFF
 )
 add_library(librbus-core STATIC SHARED IMPORTED)

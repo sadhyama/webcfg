@@ -28,7 +28,11 @@ link_directories ( ${LIBRARY_DIR} )
 set(SOURCES webcfgCli.c ../src/webcfg_helpers.c ../src/webcfg.c ../src/webcfg_param.c ../src/webcfg_pack.c ../src/webcfg_multipart.c ../src/webcfg_auth.c ../src/webcfg_notify.c ../src/webcfg_db.c ../src/webcfg_generic.c ../src/webcfg_blob.c ../src/webcfg_event.c ../src/webcfg_metadata.c ../src/webcfg_timer.c)
 
 if (WEBCONFIG_BIN_SUPPORT)
-set(SOURCES ${SOURCES} ../src/webcfg_rbus.c)
+add_definitions(-DWEBCONFIG_BIN_SUPPORT)
+endif (WEBCONFIG_BIN_SUPPORT)
+
+if (WEBCONFIG_BIN_SUPPORT)
+set(SOURCES ${SOURCES} ../src/webcfg_generic_pc.c ../src/webcfg_rbus.c)
 endif (WEBCONFIG_BIN_SUPPORT)
 
 if (FEATURE_SUPPORT_AKER)
@@ -72,7 +76,7 @@ add_test(NAME test_multipart COMMAND ${MEMORY_CHECK} ./test_multipart)
 set(SOURCES test_multipart.c ../src/webcfg_param.c ../src/webcfg_multipart.c ../src/webcfg_helpers.c ../src/webcfg.c ../src/webcfg_auth.c ../src/webcfg_notify.c ../src/webcfg_db.c ../src/webcfg_pack.c ../src/webcfg_blob.c ../src/webcfg_event.c ../src/webcfg_generic.c ../src/webcfg_metadata.c ../src/webcfg_timer.c)
 
 if (WEBCONFIG_BIN_SUPPORT)
-set(SOURCES ${SOURCES} ../src/webcfg_rbus.c)
+set(SOURCES ${SOURCES} ../src/webcfg_generic_pc.c ../src/webcfg_rbus.c)
 endif (WEBCONFIG_BIN_SUPPORT)
 
 if (FEATURE_SUPPORT_AKER)
@@ -98,7 +102,7 @@ add_test(NAME test_mul_supp COMMAND ${MEMORY_CHECK} ./test_mul_supp)
 set(SOURCES test_mul_supp.c ../src/webcfg_param.c ../src/webcfg_multipart.c ../src/webcfg_helpers.c ../src/webcfg.c ../src/webcfg_auth.c ../src/webcfg_notify.c ../src/webcfg_db.c ../src/webcfg_pack.c ../src/webcfg_blob.c ../src/webcfg_event.c ../src/webcfg_generic.c ../src/webcfg_metadata.c ../src/webcfg_timer.c)
 
 if (WEBCONFIG_BIN_SUPPORT)
-set(SOURCES ${SOURCES} ../src/webcfg_rbus.c)
+set(SOURCES ${SOURCES} ../src/webcfg_generic_pc.c ../src/webcfg_rbus.c)
 endif (WEBCONFIG_BIN_SUPPORT)
 
 if (FEATURE_SUPPORT_AKER)
@@ -124,7 +128,7 @@ add_test(NAME test_events COMMAND ${MEMORY_CHECK} ./test_events)
 set(SOURCES test_events.c ../src/webcfg_param.c ../src/webcfg_multipart.c ../src/webcfg_helpers.c ../src/webcfg.c ../src/webcfg_auth.c ../src/webcfg_notify.c ../src/webcfg_db.c ../src/webcfg_pack.c ../src/webcfg_blob.c ../src/webcfg_event.c ../src/webcfg_generic.c ../src/webcfg_metadata.c ../src/webcfg_timer.c )
 
 if (WEBCONFIG_BIN_SUPPORT)
-set(SOURCES ${SOURCES} ../src/webcfg_rbus.c)
+set(SOURCES ${SOURCES} ../src/webcfg_generic_pc.c ../src/webcfg_rbus.c)
 endif (WEBCONFIG_BIN_SUPPORT)
 
 if (FEATURE_SUPPORT_AKER)
@@ -153,7 +157,7 @@ add_test(NAME test_events_supp COMMAND ${MEMORY_CHECK} ./test_events_supp)
 set(SOURCES test_events_supp.c ../src/webcfg_param.c ../src/webcfg_multipart.c ../src/webcfg_helpers.c ../src/webcfg.c ../src/webcfg_auth.c ../src/webcfg_notify.c ../src/webcfg_db.c ../src/webcfg_pack.c ../src/webcfg_blob.c ../src/webcfg_event.c ../src/webcfg_generic.c ../src/webcfg_metadata.c ../src/webcfg_timer.c)
 
 if (WEBCONFIG_BIN_SUPPORT)
-set(SOURCES ${SOURCES} ../src/webcfg_rbus.c)
+set(SOURCES ${SOURCES} ../src/webcfg_generic_pc.c ../src/webcfg_rbus.c)
 endif (WEBCONFIG_BIN_SUPPORT)
 
 if (FEATURE_SUPPORT_AKER)
@@ -189,7 +193,7 @@ add_test(NAME test_root COMMAND ${MEMORY_CHECK} ./test_root)
 set(SOURCES test_root.c ../src/webcfg_param.c ../src/webcfg_multipart.c ../src/webcfg_helpers.c ../src/webcfg.c ../src/webcfg_auth.c ../src/webcfg_notify.c ../src/webcfg_db.c ../src/webcfg_pack.c ../src/webcfg_blob.c ../src/webcfg_event.c ../src/webcfg_generic.c ../src/webcfg_metadata.c ../src/webcfg_timer.c)
 
 if (WEBCONFIG_BIN_SUPPORT)
-set(SOURCES ${SOURCES} ../src/webcfg_rbus.c)
+set(SOURCES ${SOURCES} ../src/webcfg_generic_pc.c ../src/webcfg_rbus.c)
 endif (WEBCONFIG_BIN_SUPPORT)
 
 if (FEATURE_SUPPORT_AKER)
@@ -227,7 +231,7 @@ add_test(NAME test_multipart_unittest COMMAND ${MEMORY_CHECK} ./test_multipart_u
 set(SOURCES test_multipart_unittest.c ../src/webcfg_param.c ../src/webcfg_multipart.c ../src/webcfg_helpers.c ../src/webcfg.c ../src/webcfg_auth.c ../src/webcfg_notify.c ../src/webcfg_db.c ../src/webcfg_pack.c ../src/webcfg_blob.c ../src/webcfg_event.c ../src/webcfg_generic.c ../src/webcfg_metadata.c)
 
 if (WEBCONFIG_BIN_SUPPORT)
-set(SOURCES ${SOURCES} ../src/webcfg_rbus.c)
+set(SOURCES ${SOURCES} ../src/webcfg_generic_pc.c ../src/webcfg_rbus.c)
 endif (WEBCONFIG_BIN_SUPPORT)
 
 if (FEATURE_SUPPORT_AKER)

@@ -261,6 +261,7 @@ int registerWebcfgEvent(WebConfigEventCallback webcfgEventCB)
 			ret = 1;
 		}
 	}
+	UNUSED(webcfgEventCB);
 #else
 	UNUSED(webcfgEventCB);
 #endif

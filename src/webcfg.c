@@ -62,6 +62,7 @@ pthread_mutex_t sync_mutex=PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t sync_condition=PTHREAD_COND_INITIALIZER;
 bool g_shutdown  = false;
 bool bootSyncInProgress = false;
+bool maintenanceSyncInProgress = false;
 pthread_t* g_mpthreadId;
 #ifdef MULTIPART_UTILITY
 static int g_testfile = 0;
@@ -155,9 +156,9 @@ void *WebConfigMultipartTask(void *status)
 	{
 		if(forced_sync)
 		{
-			WebcfgDebug("Triggered Forced sync\n");
+			WebcfgInfo("Triggered Forced sync\n");
 			processWebconfgSync((int)Status, syncDoc);
-			WebcfgDebug("reset forced_sync after sync\n");
+			WebcfgInfo("reset forced_sync after sync\n");
 			forced_sync = 0;
 			if(get_global_supplementarySync() && syncDoc !=NULL)
 			{
@@ -171,6 +172,8 @@ void *WebConfigMultipartTask(void *status)
 		{
 			if(maintenance_doc_sync == 1 && checkMaintenanceTimer() == 1 )
 			{
+				WebcfgInfo("Maintenance sync started. set maintenanceSync to true\n");
+				set_maintenanceSync(true);
 				char *ForceSyncDoc = NULL;
 				char* ForceSyncTransID = NULL;
 				getForceSync(&ForceSyncDoc, &ForceSyncTransID);
@@ -187,7 +190,7 @@ void *WebConfigMultipartTask(void *status)
 				{
 					WEBCFG_FREE(ForceSyncTransID);
 				}
-				WebcfgDebug("Triggered Supplementary doc boot sync\n");
+				WebcfgInfo("Triggered Supplementary doc boot sync\n");
 				SupplementaryDocs_t *sp = NULL;
 				sp = get_global_spInfoHead();
 
@@ -219,7 +222,7 @@ void *WebConfigMultipartTask(void *status)
 		clock_gettime(CLOCK_REALTIME, &ts);
 
 		retry_flag = get_doc_fail();
-		WebcfgDebug("The retry flag value is %d\n", retry_flag);
+		WebcfgInfo("The retry flag value is %d\n", retry_flag);
 
 		if ( retry_flag == 0)
 		{
@@ -228,6 +231,8 @@ void *WebConfigMultipartTask(void *status)
 			ts.tv_sec += getMaintenanceSyncSeconds(maintenance_count);
 			maintenance_doc_sync = 1;
 			WebcfgInfo("The Maintenance Sync triggers at %s\n", printTime((long long)ts.tv_sec));
+			set_maintenanceSync(false);
+			WebcfgInfo("maintenance sync completed. reset maintenanceSync to false\n");
 		#else
 			maintenance_doc_sync = 0;
 			maintenance_count = 0;
@@ -241,15 +246,15 @@ void *WebConfigMultipartTask(void *status)
 				set_retry_timer(retrySyncSeconds());
 			}
 			ts.tv_sec += get_retry_timer();
-			WebcfgDebug("The retry triggers at %s\n", printTime((long long)ts.tv_sec));
+			WebcfgInfo("The retry triggers at %s\n", printTime((long long)ts.tv_sec));
 		}
 
 		if(retry_flag == 1 || maintenance_doc_sync == 1)
 		{
-			WebcfgDebug("B4 sync_condition pthread_cond_timedwait\n");
+			WebcfgInfo("B4 sync_condition pthread_cond_timedwait\n");
 			rv = pthread_cond_timedwait(&sync_condition, &sync_mutex, &ts);
-			WebcfgDebug("The retry flag value is %d\n", get_doc_fail());
-			WebcfgDebug("The value of rv %d\n", rv);
+			WebcfgInfo("The retry flag value is %d\n", get_doc_fail());
+			WebcfgInfo("The value of rv %d\n", rv);
 		}
 		else 
 		{
@@ -264,14 +269,14 @@ void *WebConfigMultipartTask(void *status)
 				set_retry_timer(900);
 				set_global_retry_timestamp(0);
 				failedDocsRetry();
-				WebcfgDebug("After the failedDocsRetry\n");
+				WebcfgInfo("After the failedDocsRetry\n");
 			}
 			else
 			{
 				time(&t);
 				wait_flag = 0;
 				maintenance_count = 0;
-				WebcfgDebug("Supplementary Sync Interval %d sec and syncing at %s\n",value,ctime(&t));
+				WebcfgInfo("Supplementary Sync Interval %d sec and syncing at %s\n",value,ctime(&t));
 			}
 		}
 		else if(!rv && !g_shutdown)
@@ -308,7 +313,7 @@ void *WebConfigMultipartTask(void *status)
 				}
 			}
 
-			WebcfgDebug("forced_sync is %d\n", forced_sync);
+			WebcfgInfo("forced_sync is %d\n", forced_sync);
 		}
 		else if(g_shutdown)
 		{
@@ -418,6 +423,16 @@ bool get_bootSync()
 void set_bootSync(bool bootsync)
 {
    bootSyncInProgress  = bootsync;
+}
+
+bool get_maintenanceSync()
+{
+    return maintenanceSyncInProgress;
+}
+
+void set_maintenanceSync(bool maintenancesync)
+{
+   maintenanceSyncInProgress  = maintenancesync;
 }
 
 #ifdef MULTIPART_UTILITY

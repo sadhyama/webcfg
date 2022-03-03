@@ -315,12 +315,15 @@ void* processSubdocEvents()
 							//No DB update for supplementary sync as version is not required to be stored.
 							if(subdoc_node->isSupplementarySync == 0)
 							{
-								WebcfgDebug("AddToDB subdoc_name %s version %lu\n", eventParam->subdoc_name, (long)eventParam->version);
+								WebcfgInfo("AddToDB subdoc_name %s version %lu\n", eventParam->subdoc_name, (long)eventParam->version);
+								WebcfgInfo("Delay add to DB by 10s to trigger second poke\n");
+								sleep(10);
+								WebcfgInfo("10s sleep done\n");
 								checkDBList(eventParam->subdoc_name,eventParam->version, NULL);
-								WebcfgDebug("checkRootUpdate\n");
+								WebcfgInfo("checkRootUpdate\n");
 								if(checkRootUpdate() == WEBCFG_SUCCESS)
 								{
-									WebcfgDebug("updateRootVersionToDB\n");
+									WebcfgInfo("updateRootVersionToDB\n");
 									updateRootVersionToDB();
 								}
 								addNewDocEntry(get_successDocCount());
@@ -330,7 +333,7 @@ void* processSubdocEvents()
 								WebcfgInfo("No DB update for supplementary sync as version is not required to be stored.\n");
 							}
 							//root doc delete from tmp list and mp docs destroy can be done irrespective of primary/supplementary checks as all docs success can be reached during any sync.
-							WebcfgDebug("check for deleteRootAndMultipartDocs\n");
+							WebcfgInfo("check for deleteRootAndMultipartDocs\n");
 							deleteRootAndMultipartDocs();
 						}
 						else
@@ -951,6 +954,15 @@ WEBCFG_STATUS retryMultipartSubdoc(webconfig_tmp_data_t *docNode, char *docName)
 
 	while( gmp != NULL)
 	{
+		multipartdocs_t *temp_mp = NULL;
+		temp_mp = get_global_mp();
+
+		if(temp_mp == NULL)
+		{
+			WebcfgInfo("mp cache list is empty. Exiting from subdoc retry.\n");
+			break;
+		}
+
 		if(strcmp(gmp->name_space, docName) == 0)
 		{
 			WebcfgDebug("gmp->name_space %s\n", gmp->name_space);

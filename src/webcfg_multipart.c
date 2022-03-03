@@ -87,6 +87,7 @@ static char *supplementaryDocs_header=NULL;
 static multipartdocs_t *g_mp_head = NULL;
 pthread_mutex_t multipart_t_mut =PTHREAD_MUTEX_INITIALIZER;
 static int eventFlag = 0;
+static int poke = 0;
 char * get_global_transID(void)
 {
     return g_transID;
@@ -587,6 +588,16 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 	void *buff = NULL;
 #endif
 
+	if(poke ==0) //first poke (1.3.5..)
+	{
+		WebcfgInfo("poke set to 1\n");
+		poke =1;
+	}
+	else //second poke (2.4.6..)
+	{
+		WebcfgInfo("poke set to 0\n");
+		poke = 0;
+	}
 	mp_count = get_multipartdoc_count();
 	if(transaction_id !=NULL)
 	{
@@ -622,6 +633,16 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 	{
 		ret = WDMP_FAILURE;
 		err = 0;
+
+		WebcfgInfo("check global mp\n");
+		multipartdocs_t *temp_mp = NULL;
+		temp_mp = get_global_mp();
+
+		if(temp_mp == NULL)
+		{
+			WebcfgInfo("mp cache list is empty. Exiting from subdoc processing.\n");
+			break;
+		}
 
 		webconfig_tmp_data_t * subdoc_node = NULL;
 		subdoc_node = getTmpNode(mp->name_space);
@@ -762,7 +783,13 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 						setValues(reqParam, paramCount, ATOMIC_SET_WEBCONFIG, NULL, NULL, &ret, &ccspStatus);
 					#endif
 					
-					
+					WebcfgInfo("poke value %d\n", poke);
+					if(poke == 0)
+					{
+						WebcfgInfo("Delay setValues by 30s\n");
+						sleep(30);
+					}
+
 					if(ret == WDMP_SUCCESS)
 					{
 						WebcfgInfo("setValues success. ccspStatus : %d\n", ccspStatus);
@@ -1929,7 +1956,7 @@ void delete_multipart()
 	{
 		temp = head;
 		head = head->next;
-		WebcfgDebug("Deleted mp node: temp->name_space:%s\n", temp->name_space);
+		WebcfgInfo("Deleted mp node: temp->name_space:%s\n", temp->name_space);
 		free(temp);
 		temp = NULL;
 	}
@@ -2357,12 +2384,13 @@ void deleteRootAndMultipartDocs()
 	if(checkRootDelete() == WEBCFG_SUCCESS)
 	{
 		//Delete tmp queue root as all docs are applied
-		WebcfgDebug("Delete tmp queue root as all docs are applied\n");
+		WebcfgInfo("Delete tmp queue root as all docs are applied\n");
 		//WebcfgInfo("root version to delete is %lu\n", (long)version);
 		reset_numOfMpDocs();
 		delete_tmp_list();
+		WebcfgInfo("B4 delete_multipart\n");
 		delete_multipart();
-		WebcfgDebug("After free mp\n");
+		WebcfgInfo("After free mp\n");
 	}
 }
 

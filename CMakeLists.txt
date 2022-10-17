@@ -191,7 +191,7 @@ if (WEBCONFIG_BIN_SUPPORT)
 #-------------------------------------------------------------------------------
 ExternalProject_Add(rtMessage
      PREFIX ${CMAKE_CURRENT_BINARY_DIR}/_prefix/rtMessage
-     GIT_REPOSITORY https://github.com/rdkcmf/rdk-rtmessage.git
+     GIT_REPOSITORY https://code.rdkcentral.com/r/rdk/components/opensource/rtmessage
      GIT_TAG rdk-next
      CMAKE_ARGS += -DBUILD_RTMESSAGE_LIB=ON
                    -DBUILD_RTMESSAGE_SAMPLE_APP=ON
@@ -207,7 +207,7 @@ add_dependencies(librtMessage rtMessage)
 ExternalProject_Add(rbus-core
      DEPENDS rtMessage
      PREFIX ${CMAKE_CURRENT_BINARY_DIR}/_prefix/rbus-core
-     GIT_REPOSITORY https://github.com/rdkcmf/rbuscore.git
+     GIT_REPOSITORY https://code.rdkcentral.com/r/components/opensource/rbuscore
      GIT_TAG rdk-next
      CMAKE_ARGS += -DBUILD_FOR_DESKTOP=ON -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}
                    -DBUILD_TESTING=OFF
@@ -220,7 +220,7 @@ add_dependencies(librbus-core rbus-core)
 ExternalProject_Add(rbus
      DEPENDS rtMessage rbus-core
      PREFIX ${CMAKE_CURRENT_BINARY_DIR}/_prefix/rbus
-     GIT_REPOSITORY https://github.com/rdkcmf/rbus.git
+     GIT_REPOSITORY https://code.rdkcentral.com/r/components/opensource/rbus
      GIT_TAG rdk-next
      CMAKE_ARGS += -DBUILD_FOR_DESKTOP=ON -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -DBUILD_TESTING=OFF
 )

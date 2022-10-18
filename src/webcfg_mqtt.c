@@ -37,8 +37,125 @@ int              webcfg_mqtt_port = STATS_MQTT_PORT;
 int              webcfg_mqtt_qos = STATS_MQTT_QOS;
 uint8_t          webcfg_mqtt_compress = 0;
 int              webcfg_mosquitto_init = false;
+typedef void mosquitto_cbk_t(mosqwev_t *self, void *data, int result);
 
-	
+void mosqwev_mosquitto_connect_cbk(struct mosquitto *mosq,
+        void *__self, int rc);
+
+void mosqwev_mosquitto_disconnect_cbk(struct mosquitto *mosq,
+        void *__self, int rc);
+
+void mosqwev_mosquitto_publish_cbk(struct mosquitto *mosq,
+        void *__self, int mid);
+
+void mosqwev_mosquitto_message_cbk(struct mosquitto *mosq,
+        void *__self, const struct mosquitto_message *msg);
+
+void mosqwev_mosquitto_subscribe_cbk(struct mosquitto *mosq,
+        void *__self, int mid, int qos_n, const int *qos_v);
+
+void mosqwev_mosquitto_subscribe_cbk(struct mosquitto *mosq,
+        void *__self, int mid, int qos_cont, const int *qos_v);
+
+void mosqwev_mosquitto_unsubscribe_cbk(struct mosquitto *mosq,
+        void *__self, int mid);
+int mosqwev_reinit_settings(mosqwev_t *self);
+int mosqwev_reinit(mosqwev_t *self);
+void mosqwev_init_cbk(mosqwev_t *self)
+{
+    //mosquitto_log_callback_set(self->me_mosq, mosqwev_mosquitto_log_cbk);
+    mosquitto_connect_callback_set(self->me_mosq, mosqwev_mosquitto_connect_cbk);
+    mosquitto_disconnect_callback_set(self->me_mosq, mosqwev_mosquitto_disconnect_cbk);
+    mosquitto_publish_callback_set(self->me_mosq, mosqwev_mosquitto_publish_cbk);
+    mosquitto_message_callback_set(self->me_mosq, mosqwev_mosquitto_message_cbk);
+    mosquitto_subscribe_callback_set(self->me_mosq, mosqwev_mosquitto_subscribe_cbk);
+    mosquitto_unsubscribe_callback_set(self->me_mosq, mosqwev_mosquitto_unsubscribe_cbk);
+    WebcfgInfo("mosqwev_init_cbk set done\n");
+}
+
+int mosqwev_reinit_settings(mosqwev_t *self)
+{
+    int rc;
+
+    WebcfgInfo( "Reinit: cafile=%s capath=%s certfile=%s keyfile=%s pwcb=%p certreqs=%d tls=%s ciphers=%s",
+        self->me_cafile,
+        self->me_capath,
+        self->me_certfile,
+        self->me_keyfile,
+        (void *)self->me_pw_callback,
+        self->me_cert_reqs,
+        self->me_tls_version,
+        self->me_ciphers);
+
+    rc = mosquitto_tls_set(self->me_mosq,
+                           self->me_cafile,
+                           self->me_capath,
+                           self->me_certfile,
+                           self->me_keyfile,
+                           (void *)self->me_pw_callback);
+    if (rc) {
+        WebcfgError("Failed to set tls: %s", mosquitto_strerror(rc));
+        return rc;
+    }
+
+    rc = mosquitto_tls_opts_set(self->me_mosq,
+                                self->me_cert_reqs,
+                                self->me_tls_version,
+                                self->me_ciphers);
+    if (rc) {
+        WebcfgError( "Failed to set tls opts: %s", mosquitto_strerror(rc));
+        return rc;
+    }
+
+    return 0;
+}
+
+int mosqwev_reinit(mosqwev_t *self)
+{
+    int rc;
+
+    mosquitto_reinitialise(self->me_mosq, self->me_cid, true, self);
+    mosqwev_init_cbk(self);
+
+    rc = mosqwev_reinit_settings(self);
+    if (rc) {
+        WebcfgError("Failed to reinit settings: %s", mosquitto_strerror(rc));
+        return rc;
+    }
+
+    return 0;
+}
+
+void mosqwev_connect_callback_internal( mosqwev_t *self, void *data, int result) {
+ 
+    int ret;
+
+    if(!result) {
+        WebcfgInfo( "MQTT Connect Success\n");
+        if(strlen(webcfg_mqtt_subscribe))
+        {
+            WebcfgInfo("MQTT Subscription to %s", webcfg_mqtt_subscribe);
+            ret = mosquitto_subscribe(self->me_mosq, NULL, webcfg_mqtt_subscribe, 0);
+            WebcfgInfo( "MQTT Subscription, Ret Code: %d", ret);
+        }
+    }
+    else
+    {
+        WebcfgError("MQTT Connect failed\n");
+    }
+}
+
+void mosqwev_subscribe_callback_internal( mosqwev_t *self, void *data, int mid, int qos_count, const int *granted_qos) {
+    WebcfgInfo("MQTT Poke Subscribed Successfully-------");
+}
+
+void mosqwev_subscribe_message_callback(mosqwev_t *self, void *data, const char *topic, void *msg, size_t msglen) {
+    char msgDecode[2048] = {'\0'};
+    WebcfgInfo("MQTT Poke Message Received on topic: %s", topic);
+    memcpy(msgDecode, msg, msglen);
+    WebcfgInfo("MQTT Poke Message Content: %s ", msgDecode);
+}
+
 /*
  * Initialize MQTT library
  */
@@ -93,6 +210,129 @@ bool WebcfgMqttInit(void)
 	return true;
 }
 
+/*
+ * Mark the connection as connected -- this allows us to register for write events on the socket
+ */
+void mosqwev_mosquitto_connect_cbk(struct mosquitto *mosq, void *__self, int rc)
+{
+    (void)mosq;
+
+    WebcfgInfo("Inside mosqwev_mosquitto_connect_cbk\n");
+    mosqwev_t *self = (mosqwev_t *)__self;
+
+    if (!self->me_connecting)
+        WebcfgInfo("Unexpected connect callback");
+
+    self->me_connecting = false;
+
+    if (rc == 0)
+    {
+        self->me_connected = true;
+        WebcfgInfo("Connected to %s:%d -- %s", self->me_host, self->me_port, self->me_cid);
+    }
+    else
+    {
+        WebcfgInfo("Connection error: %s:%d -- %s", self->me_host, self->me_port, self->me_cid);
+        self->me_connected = false;
+    }
+
+    if (self->me_connect_cbk != NULL)
+    {
+	WebcfgInfo("invoke connect_cbk\n");
+        self->me_connect_cbk(self, self->me_data, rc);
+    }
+    WebcfgInfo("mosqwev_mosquitto_connect_cbk done\n");
+}
+
+/*
+ * Mark the connection as connected -- this allows us to register for write events on the socket
+ */
+void mosqwev_mosquitto_disconnect_cbk(struct mosquitto *mosq, void *__self, int rc)
+{
+    (void)mosq;
+
+    mosqwev_t *self = (mosqwev_t *)__self;
+
+    WebcfgInfo("Disconnected from %s:%d -- %s: Reason %s (%d)",
+            self->me_host, self->me_port, self->me_cid, mosquitto_strerror(rc), rc);
+
+    self->me_connected = false;
+    self->me_connecting = false;
+
+    if (self->me_disconnect_cbk != NULL)
+    {
+        self->me_disconnect_cbk(self, self->me_data, rc);
+    }
+}
+
+/*
+ * Call the publish callback
+ */
+void mosqwev_mosquitto_publish_cbk(struct mosquitto *mosq, void *__self, int mid)
+{
+    (void)mosq;
+
+    mosqwev_t *self = (mosqwev_t *)__self;
+
+    if (self->me_publish_cbk != NULL)
+    {
+        self->me_publish_cbk(self, self->me_publish_cbk, mid);
+    }
+}
+
+/*
+ * Call the message callback
+ */
+void mosqwev_mosquitto_message_cbk(struct mosquitto *mosq, void *__self, const struct mosquitto_message *msg)
+{
+	WebcfgInfo("Inside mosqwev_mosquitto_message_cbk\n");
+    (void)mosq;
+
+    mosqwev_t *self = (mosqwev_t *)__self;
+
+    if (self->me_message_cbk != NULL)
+    {
+        self->me_message_cbk(self, self->me_data, msg->topic, msg->payload, msg->payloadlen);
+    }
+}
+
+/*
+ * Call the subscribe callback
+ */
+void mosqwev_mosquitto_subscribe_cbk(struct mosquitto *mosq, void *__self, int mid, int qos_n, const int *qos_v)
+{
+	WebcfgInfo("Inside mosqwev_mosquitto_subscribe_cbk\n");
+    (void)mosq;
+
+    mosqwev_t *self = (mosqwev_t *)__self;
+
+    WebcfgInfo("Subscribe %s:%d -- %s, mid: %d",
+            self->me_host, self->me_port, self->me_cid, mid);
+
+    if (self->me_subscribe_cbk != NULL)
+    {
+        self->me_subscribe_cbk(self, self->me_publish_cbk, mid, qos_n, qos_v);
+    }
+}
+
+/*
+ * Call the subscribe callback
+ */
+void mosqwev_mosquitto_unsubscribe_cbk(struct mosquitto *mosq, void *__self, int mid)
+{
+    (void)mosq;
+
+    mosqwev_t *self = (mosqwev_t *)__self;
+
+    WebcfgInfo("Unsubscribed %s:%d -- %s, mid: %d",
+            self->me_host, self->me_port, self->me_cid, mid);
+
+    if (self->me_unsubscribe_cbk != NULL)
+    {
+        self->me_unsubscribe_cbk(self, self->me_publish_cbk, mid);
+    }
+}
+
 bool mosqwev_init(mosqwev_t *self, const char *cid, void *data)
 {
     memset(self, 0, sizeof(*self));
@@ -114,7 +354,7 @@ bool mosqwev_init(mosqwev_t *self, const char *cid, void *data)
         return false;
     }
 
-    //mosqwev_init_cbk(self);
+    mosqwev_init_cbk(self);
 
     return true;
 }
@@ -251,11 +491,11 @@ bool mosqwev_connect(mosqwev_t *self, char *host, char *subscribe, int port)
     if (self->me_connected)
         WebcfgInfo("Previous session was still connected");
 
-    /*rc = mosqwev_reinit(self);
+    rc = mosqwev_reinit(self);
     if (rc) {
         WebcfgError("Connection failed due to reinit: %s", mosquitto_strerror(rc));
         return rc;
-    }*/
+    }
 
     self->me_connecting = false;
     self->me_connected = false;
@@ -278,38 +518,6 @@ bool mosqwev_connect(mosqwev_t *self, char *host, char *subscribe, int port)
     return true;
 }
 
-void mosqwev_connect_callback_internal( mosqwev_t *self, void *data, int result)
-{
-    int ret;
-
-    if(!result)
-    {
-	self->me_connected = true;
-        WebcfgInfo("MQTT Connect Success\n");
-        if(strlen(webcfg_mqtt_subscribe))
-        {
-            WebcfgInfo("MQTT Subscription to %s", webcfg_mqtt_subscribe);
-            ret = mosquitto_subscribe(self->me_mosq, NULL, webcfg_mqtt_subscribe, 0);
-            WebcfgInfo("MQTT Subscription, ret: %d", ret);
-        }
-    }
-    else
-    {
-        WebcfgError("MQTT Connect failed\n");
-    }
-}
-
-void mosqwev_subscribe_callback_internal( mosqwev_t *self, void *data, int mid, int qos_count, const int *granted_qos) {
-    WebcfgInfo("MQTT Poke Subscribed Successfully-------");
-}
-
-void mosqwev_subscribe_message_callback(mosqwev_t *self, void *data, const char *topic, void *msg, size_t msglen) {
-    char msgDecode[2048] = {'\0'};
-    WebcfgInfo("MQTT Poke Message Received on topic: %s", topic);
-    memcpy(msgDecode, msg, msglen);
-    WebcfgInfo("MQTT Poke Message Content: %s ", msgDecode);
-}
-
 /*
  * Enable TLS mode; must be called before mosqwev_connect() -- just a wrapper around mosquitto_tls_set()
  */
@@ -317,7 +525,7 @@ bool mosqwev_tls_set(mosqwev_t *self,const char *cafile,const char *capath,const
 {
     int rc;
 
-    WebcfgInfo( "CAFILE:%s CAPATH:%s CERTFILE:%s KEYFILE:%s PWCBK:%p", cafile, capath, certfile, keyfile, pw_callback);
+    WebcfgInfo( "CAFILE:%s CAPATH:%s CERTFILE:%s KEYFILE:%s PWCBK:%p\n", cafile, capath, certfile, keyfile, pw_callback);
     rc = mosquitto_tls_set(self->me_mosq, cafile, capath,
             certfile, keyfile, (void *)pw_callback);
 
@@ -461,9 +669,6 @@ bool mosqwev_publish(mosqwev_t *self,
     return true;
 }
 
-/*
- * Set the connection callback
- */
 
 /*
  * Set the connection callback
@@ -513,58 +718,6 @@ void mosqwev_cbk_unsubscribe_set(mosqwev_t *self, mosqwev_cbk_t *cbk)
     self->me_unsubscribe_cbk = cbk;
 }
 
-/*int fileread(char *filename, char **data, int *len)
-{
-   	FILE *fp;
-	size_t sz;
-	int ch_count = 0;
-	fp = fopen(filename, "r+");
-	if (fp == NULL)
-	{
-		WebcfgError("Failed to open file %s\n", filename);
-		return 0;
-	}
-
-	fseek(fp, 0, SEEK_END);
-	ch_count = ftell(fp);
-	fseek(fp, 0, SEEK_SET);
-
-	*data = (char *) malloc(sizeof(char) * (ch_count));
-	sz = fread(*data, 1, ch_count,fp);
-	if (!sz) 
-	{	
-		fclose(fp);
-		WebcfgError("fread failed.\n");
-		WEBCFG_FREE(*data);
-		return WEBCFG_FAILURE;
-	}
-	*len = ch_count;
-	fclose(fp);
-	return 1;
-
-}*/
-/*int fileread(char *filename, char **data, int *len)
-{
-	FILE *fp;
-	int ch_count = 0;
-	fp = fopen(filename, "r+");
-	if (fp == NULL)
-	{
-		WebcfgError("Failed to open file %s\n", filename);
-		return 0;
-	}
-	fseek(fp, 0, SEEK_END);
-	ch_count = ftell(fp);
-	fseek(fp, 0, SEEK_SET);
-	*data = (char *) malloc(sizeof(char) * (ch_count + 1));
-	fread(*data, 1, ch_count-1,fp);
-	*len = ch_count;
-	WebcfgInfo("ch_count is %d\n", ch_count);
-	WebcfgInfo("len %d data len is %ld\n", *len, strlen(*data));
-	(*data)[ch_count] ='\0';
-	fclose(fp);
-	return 1;
-}*/
 void get_from_file(char *key, char **val)
 {
         FILE *fp = fopen(HOST_FILE_LOCATION, "r");
@@ -595,6 +748,6 @@ void get_from_file(char *key, char **val)
         }
         else
         {
-                WebcfgInfo("val fetched is %s\n", *val);
+                WebcfgDebug("val fetched is %s\n", *val);
         }
 }

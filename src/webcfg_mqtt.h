@@ -26,6 +26,7 @@
 #include <mosquitto.h>
 #include <openssl/ssl.h>
 #include <time.h>
+#include <math.h>
 #include "webcfg.h"
 #include "webcfg_log.h"
 #include "webcfg_multipart.h"

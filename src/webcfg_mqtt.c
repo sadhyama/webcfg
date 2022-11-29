@@ -187,11 +187,14 @@ bool webcfg_mqtt_init(int status, char *systemreadytime)
 						{
 							WebcfgError("Failed in mosquitto_tls_set %d %s\n", rc, mosquitto_strerror(rc));
 						}
-						rc = mosquitto_tls_opts_set(mosq, tls->cert_reqs, tls->tls_version, tls->ciphers);
-						WebcfgInfo("mosquitto_tls_opts_set rc %d\n", rc);
-						if(rc)
+						else
 						{
-							WebcfgError("Failed in mosquitto_tls_opts_set %d %s\n", rc, mosquitto_strerror(rc));
+							rc = mosquitto_tls_opts_set(mosq, tls->cert_reqs, tls->tls_version, tls->ciphers);
+							WebcfgInfo("mosquitto_tls_opts_set rc %d\n", rc);
+							if(rc)
+							{
+								WebcfgError("Failed in mosquitto_tls_opts_set %d %s\n", rc, mosquitto_strerror(rc));
+							}
 						}
 					}
 					else

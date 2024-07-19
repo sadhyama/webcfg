@@ -171,13 +171,13 @@ int checkMaintenanceTimer()
 	clock_gettime(CLOCK_REALTIME, &rt);
 
 	tmOffset = getTimeOffset();
-	WebcfgDebug("The offset obtained from getTimeOffset in checkMaintenanceTimer is %ld\n", tmOffset);
+	WebcfgInfo("The offset obtained from getTimeOffset in checkMaintenanceTimer is %ld\n", tmOffset);
 
 	cur_time = rt.tv_sec + tmOffset;
 	cur_time_in_sec = getTimeInSeconds(cur_time);
 
-	WebcfgDebug("The current time in checkMaintenanceTimer is %lld at %s\n",cur_time, printTime(cur_time));
-	WebcfgDebug("The random timer in checkMaintenanceTimer is %ld\n",get_global_maintenance_time());
+	WebcfgInfo("The current time in checkMaintenanceTimer is %lld at %s\n",cur_time, printTime(cur_time));
+	WebcfgInfo("The random timer in checkMaintenanceTimer is %ld\n",get_global_maintenance_time());
 
 	if(cur_time_in_sec >= get_global_maintenance_time())
 	{
@@ -201,7 +201,7 @@ int getMaintenanceSyncSeconds(int maintenance_count)
 	clock_gettime(CLOCK_REALTIME, &ct);
 
 	tmOffset = getTimeOffset();
-	WebcfgDebug("The offset obtained from getTimeOffset in getMaintenanceSyncSeconds is %ld\n", tmOffset);
+	WebcfgInfo("The offset obtained from getTimeOffset in getMaintenanceSyncSeconds is %ld\n", tmOffset);
 
 	current_time = ct.tv_sec + tmOffset;
 	current_time_in_sec = getTimeInSeconds(current_time);
@@ -209,7 +209,7 @@ int getMaintenanceSyncSeconds(int maintenance_count)
 	maintenance_secs =  get_global_maintenance_time() - current_time_in_sec;
 
 	WebcfgDebug("The current time in maintenanceSyncSeconds is %lld at %s\n",current_time, printTime(current_time));
-	WebcfgDebug("The random timer in maintenanceSyncSeconds is %ld\n",get_global_maintenance_time());
+	WebcfgInfo("The random timer in maintenanceSyncSeconds is %ld\n",get_global_maintenance_time());
 
 	// to shift maintenance sync to next day when already sync happened
 	if (maintenance_secs < 0 || maintenance_count == 1 )
@@ -238,7 +238,7 @@ int retrySyncSeconds()
 	retry_secs =  get_global_retry_timestamp() - current_time_in_sec;
 
 	WebcfgDebug("The current time in retrySyncSeconds is %lld at %s\n",current_time, printTime(current_time));
-	WebcfgDebug("The random timer in retrySyncSeconds is %ld\n",get_global_retry_timestamp());
+	WebcfgInfo("The random timer in retrySyncSeconds is %ld\n",get_global_retry_timestamp());
 
 	if (retry_secs < 0)
 	{
@@ -287,7 +287,7 @@ int updateRetryTimeDiff(long long expiry_time)
 	{
 		set_retry_timer(time_diff);
 		set_global_retry_timestamp(getTimeInSeconds(expiry_time));
-		WebcfgDebug("The retry_timer is %d after set\n", get_retry_timer());
+		WebcfgInfo("The retry_timer is %d after set\n", get_retry_timer());
 	}
 	if(get_global_retry_timestamp() == 0)
 	{
@@ -322,8 +322,8 @@ int checkRetryTimer( long long timestamp)
 	clock_gettime(CLOCK_REALTIME, &rt);
 	cur_time = rt.tv_sec;
 
-	WebcfgDebug("The current time in device is %lld at %s\n", cur_time, printTime(cur_time));
-	WebcfgDebug("The Retry timestamp is %lld at %s\n", timestamp, printTime(timestamp));
+	WebcfgInfo("The current time in device is %lld at %s\n", cur_time, printTime(cur_time));
+	WebcfgInfo("The Retry timestamp is %lld at %s\n", timestamp, printTime(timestamp));
 
 	if(cur_time >= timestamp)
 	{

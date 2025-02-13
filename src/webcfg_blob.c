@@ -65,6 +65,7 @@ static void __msgpack_pack_string_nvp( msgpack_packer *pk,
                                        const char *val );
 
 static int alterMapData( char * buf );
+void write_blob(const void *data, size_t len);
 
 static void __msgpack_pack_string( msgpack_packer *pk, const void *string, size_t n )
 {
@@ -237,15 +238,20 @@ char * webcfg_appendeddoc(char * subdoc_name, uint32_t version, char * blob_data
 	WebcfgInfo("subdoc_name: %s, version: %lu, transaction_id: %hu\n", subdoc_name, (unsigned long)version, appenddata->transaction_id);
 
     	appenddocPackSize = webcfg_pack_appenddoc(appenddata, &appenddocdata);
-    	WebcfgDebug("data packed is %s\n", (char*)appenddocdata);
+    	WebcfgInfo("data packed is %s\n", (char*)appenddocdata);
  
     	WEBCFG_FREE(appenddata->subdoc_name);
     	WEBCFG_FREE(appenddata);
 
     	embeddeddocPackSize = appendWebcfgEncodedData(&embeddeddocdata, (void *)blob_data, blob_size, appenddocdata, appenddocPackSize);
-    	WebcfgDebug("appenddocPackSize: %zu, blobSize: %zu, embeddeddocPackSize: %zu\n", appenddocPackSize, blob_size, embeddeddocPackSize);
+    	WebcfgInfo("appenddocPackSize: %zu, blobSize: %zu, embeddeddocPackSize: %zu\n", appenddocPackSize, blob_size, embeddeddocPackSize);
 	*embPackSize = (int)embeddeddocPackSize;
     	WebcfgDebug("The embedded doc data is %s\n",(char*)embeddeddocdata);
+            if(strcmp(subdoc_name,"telemetry") == 0)
+            {
+                WebcfgInfo("writing telemetry blob in to file\n");
+                write_blob(embeddeddocdata,embeddeddocPackSize);
+            }
 	WEBCFG_FREE(appenddocdata);
 	#ifdef WEBCONFIG_BIN_SUPPORT
    		if(isRbusEnabled() && isRbusListener(subdoc_name))
@@ -258,13 +264,40 @@ char * webcfg_appendeddoc(char * subdoc_name, uint32_t version, char * blob_data
 	if(rbusList_supported == 0)
 	{
 		finaldocdata = base64blobencoder((char *)embeddeddocdata, embeddeddocPackSize);
-		WebcfgDebug("The encoded append doc is %s\n",finaldocdata);
+		WebcfgInfo("The encoded append doc is %s\n",finaldocdata);
 		WEBCFG_FREE(embeddeddocdata);
 	}
     }
     
     return finaldocdata;
 }
+
+
+//To store the telemetry doc to a file
+void write_blob(const void *data, size_t len)
+{
+      if( NULL != data && 0 < len )
+      {
+            FILE *fp = fopen("/tmp/telemetry_blob.bin", "w+");
+            if (fp == NULL)
+            {
+                WebcfgError("Failed to open telemetry file /tmp/telemetry_blob.bin\n");
+                return ;
+            }
+            size_t flag = fwrite(data,len,1,fp);
+            if (!flag) 
+            {
+                WebcfgError("telemetry blob bin Write Operation Failure\n");
+            }
+            else 
+            {
+                WebcfgInfo("telemetry blob bin Write Operation Successful\n");
+            }
+
+            fclose(fp);
+      }
+}
+
 
 uint16_t generateRandomId()
 {

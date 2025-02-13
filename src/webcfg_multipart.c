@@ -16,6 +16,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <base64.h>
+#include <msgpack.h>
 #include "webcfg_multipart.h"
 #include "webcfg_param.h"
 #include "webcfg_log.h"
@@ -604,6 +606,107 @@ WEBCFG_STATUS parseMultipartDocument(void *config_data, char *ct , size_t data_s
     }
 }
 
+int get_base64_decodedbuffer(char *pString, char **buffer, int *size)
+{
+    int decodeMsgSize = 0;
+    char *decodeMsg = NULL;
+    WebcfgInfo("get_base64_decodedbuffer: ...Entering.. \n");
+  
+    if (buffer == NULL || size == NULL || pString == NULL)
+        return -1;
+
+    decodeMsgSize = b64_get_decoded_buffer_size(strlen(pString));
+    decodeMsg = (char *)malloc(sizeof(char) * decodeMsgSize);
+
+    if (!decodeMsg)
+        return -1;
+
+    *size = b64_decode((const uint8_t *)pString, strlen(pString), (uint8_t *)decodeMsg);
+    *buffer = decodeMsg;
+    WebcfgInfo("get_base64_decodedbuffer: ...Exiting.. \n");
+
+    return 0;
+  
+}
+msgpack_unpack_return get_msgpack_unpack_status(char *decodedbuf, int size)
+{
+
+    msgpack_zone mempool;
+    msgpack_object deserialized;
+    msgpack_unpack_return unpack_ret;
+
+    if (decodedbuf == NULL || !size)
+        return MSGPACK_UNPACK_NOMEM_ERROR;
+
+    msgpack_zone_init(&mempool, 2048);
+    unpack_ret = msgpack_unpack(decodedbuf, size, NULL, &mempool, &deserialized);
+        switch(unpack_ret)
+        {
+            case MSGPACK_UNPACK_SUCCESS:
+                WebcfgInfo("[get_msgpack_unpack_status]: MSGPACK_UNPACK_SUCCESS\n");
+                break;
+            case MSGPACK_UNPACK_EXTRA_BYTES:
+                WebcfgError("[get_msgpack_unpack_status]: MSGPACK_UNPACK_EXTRA_BYTES\n");
+                break;
+            case MSGPACK_UNPACK_CONTINUE:
+                WebcfgError("[get_msgpack_unpack_status]: MSGPACK_UNPACK_CONTINUE\n");
+                break;
+            case MSGPACK_UNPACK_PARSE_ERROR:
+                WebcfgError("[get_msgpack_unpack_status]: MSGPACK_UNPACK_PARSE_ERROR\n");
+                break;
+            case MSGPACK_UNPACK_NOMEM_ERROR:
+                WebcfgError("[get_msgpack_unpack_status]:MSGPACK_UNPACK_NOMEM_ERROR\n");
+                break;
+            default:
+                WebcfgError("[get_msgpack_unpack_status]: Message Pack decode failed with error\n");
+        }
+    
+    msgpack_zone_destroy(&mempool);
+    // End of msgpack decoding
+
+    return unpack_ret;
+}
+
+msgpack_unpack_return get_msgpack_unpack_status_next(char *decodedbuf, int size)
+{
+
+            size_t offset = 0;
+            msgpack_unpacked msg;
+            msgpack_unpack_return mp_rv;
+
+            msgpack_unpacked_init(&msg);
+
+            /* The outermost wrapper MUST be a map. */
+            mp_rv = msgpack_unpack_next(&msg, (const char *)decodedbuf, size, &offset);		
+            msgpack_unpacked_destroy(&msg);	
+    return mp_rv;
+}
+
+void decodeWebCfgData(char *pString)
+{
+    char *decodeMsg = NULL;
+    int size = 0;
+    int retval = 0;
+    msgpack_unpack_return unpack_ret = MSGPACK_UNPACK_SUCCESS;
+  
+   WebcfgInfo("decodeWebCfgData: ...Entering.. \n");
+
+    retval = get_base64_decodedbuffer(pString, &decodeMsg, &size);
+    if (retval == 0)
+    {
+        WebcfgInfo("decodeWebCfgData: ...Base64 Decoding Successful...\n");
+		WebcfgInfo("decodeWebCfgData: ...decodeMsg:%s size:%d\n",decodeMsg,size);
+        unpack_ret = get_msgpack_unpack_status(decodeMsg, size);
+		WebcfgInfo("decodeWebCfgData: ... get_msgpack_unpack_status:%d\n",unpack_ret);
+        unpack_ret = get_msgpack_unpack_status_next(decodeMsg, size);
+		WebcfgInfo("decodeWebCfgData: ... get_msgpack_unpack_status_next:%d\n",unpack_ret);		
+    }
+	else
+	{
+		WebcfgError("decodeWebCfgData: ...Base64 Decoding Failed...\n");		
+	}
+}
+
 WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 {
 	int i =0;
@@ -795,8 +898,9 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 					}
                                 }
 				WebcfgInfo("Request:> param[%d].name = %s, type = %d\n",i,reqParam[i].name,reqParam[i].type);
-				WebcfgDebug("Request:> param[%d].value = %s\n",i,reqParam[i].value);
-				WebcfgDebug("Request:> param[%d].type = %d\n",i,reqParam[i].type);
+				WebcfgInfo("Request:> param[%d].value = %s\n",i,reqParam[i].value);
+				WebcfgInfo("Request:> param[%d].type = %d\n",i,reqParam[i].type);
+				decodeWebCfgData(reqParam[i].value);
 			}
 
 			if(reqParam !=NULL && validate_request_param(reqParam, paramCount) == WEBCFG_SUCCESS)

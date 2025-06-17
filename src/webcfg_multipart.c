@@ -28,6 +28,7 @@
 #include "webcfg_event.h"
 #include "webcfg_metadata.h"
 #include "webcfg_timer.h"
+#include "webcfg_method.h"
 
 #ifdef FEATURE_SUPPORT_AKER
 #include "webcfg_aker.h"
@@ -731,6 +732,7 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 						appended_doc = webcfg_appendeddoc( mp->name_space, mp->etag, pm->entries[i].value, pm->entries[i].value_size, &doc_transId, &sendMsgSize);
 						if(appended_doc != NULL)
 						{
+							WebcfgInfo("[DEBUG] appended doc: %s\n", appended_doc);
 							WebcfgDebug("webcfg_appendeddoc doc_transId : %hu\n", doc_transId);
 							if(pm->entries[i].name !=NULL)
 							{
@@ -776,16 +778,16 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 					}
                                 }
 				WebcfgInfo("Request:> param[%d].name = %s, type = %d\n",i,reqParam[i].name,reqParam[i].type);
-				WebcfgDebug("Request:> param[%d].value = %s\n",i,reqParam[i].value);
-				WebcfgDebug("Request:> param[%d].type = %d\n",i,reqParam[i].type);
+				WebcfgInfo("Request:> param[%d].value = %s\n",i,reqParam[i].value);
+				WebcfgInfo("Request:> param[%d].type = %d\n",i,reqParam[i].type);
 			}
 
 			if(reqParam !=NULL && validate_request_param(reqParam, paramCount) == WEBCFG_SUCCESS)
 			{
-				WebcfgDebug("Proceed to setValues..\n");
+				WebcfgInfo("Proceed to setValues..\n");
 				if((checkAndUpdateTmpRetryCount(subdoc_node, mp->name_space))== WEBCFG_SUCCESS)
 				{
-					WebcfgDebug("WebConfig SET Request\n");
+					WebcfgInfo("WebConfig SET Request\n");
 					#ifdef WEBCONFIG_BIN_SUPPORT
 						// rbus_enabled and rbus_listener_supported, rbus_set direct API used to send binary data to component.
 						if(isRbusEnabled() && isRbusListener(mp->name_space))
@@ -797,8 +799,19 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 						//rbus_enabled and rbus_listener_not_supported, rbus_set api used to send b64 encoded data to component.
 						else 
 						{
-
-							setValues_rbus(reqParam, paramCount, ATOMIC_SET_WEBCONFIG, NULL, NULL, &ret, &ccspStatus);
+							WebcfgInfo("[DEBUG] Calling isRbusMethodName\n");
+							bool isMethod = isRbusMethodName(reqParam, paramCount);
+							WebcfgInfo("[DEBUG] isRbusMethodName returned %d\n", isMethod);
+							if (isMethod)
+							{
+								WebcfgInfo("[DEBUG] Received parameter is a rbus method. Invoking rbus_method...\n");
+								handleMethod_rbus(reqParam, &ret, &ccspStatus);
+							}
+							else
+							{
+								WebcfgInfo("rbus_enabled and rbus_listener_not_supported, rbus_set api used to send b64 encoded data to component.\n");
+								setValues_rbus(reqParam, paramCount, ATOMIC_SET_WEBCONFIG, NULL, NULL, &ret, &ccspStatus);
+							}
 						}
 					#else
 					        //dbus_enabled, ccsp common library set api used to send data to component.

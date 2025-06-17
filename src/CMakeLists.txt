@@ -72,8 +72,8 @@ endif()
 
 #Support webconfig independent bin for new design
 if (WEBCONFIG_BIN_SUPPORT)
-set(HEADERS ${HEADERS} webcfg_rbus.h)
-set(SOURCES ${SOURCES} main.c webcfg_rbus.c)
+set(HEADERS ${HEADERS} webcfg_rbus.h webcfg_method.h)
+set(SOURCES ${SOURCES} main.c webcfg_rbus.c webcfg_method.c)
 
 if (FEATURE_SUPPORT_MQTTCM)
 set(HEADERS ${HEADERS} webcfg_mqtt.h)

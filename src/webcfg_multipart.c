@@ -2315,6 +2315,21 @@ void checkValidURL(char **s) {
         {
             // If the MAC address is not empty
             WebcfgDebug("URL is having valid MAC Address.\n");
+
+			// Validate if the MAC is correct for the box
+            const char *mac = get_deviceMAC();
+            if (mac != NULL && strncmp(mac, start, 12) != 0)
+			{
+                WebcfgError("MAC Address in URL does not match actual device MAC. Updating...\n");
+                strncpy(modified_url, *s, start - *s);
+                modified_url[start - *s] = '\0';
+                strncat(modified_url, mac, sizeof(modified_url) - strlen(modified_url) - 1);
+                strncat(modified_url, "/config", sizeof(modified_url) - strlen(modified_url) - 1);
+                modified_url[sizeof(modified_url) - 1] = '\0';
+                WEBCFG_FREE(*s);
+                *s = strdup(modified_url);
+                WebcfgInfo("Updated URL: %s\n", *s);
+            }
         }
     }
 }

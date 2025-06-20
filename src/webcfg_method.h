@@ -13,23 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <stdio.h>
-#include <stdbool.h>
-#include <uuid/uuid.h>
-#include <time.h>
-#include <math.h>
-#include <wrp-c.h>
-#include <rbus/rbus.h>
-#include <rbus/rbus_object.h>
-#include <rbus/rbus_property.h>
-#include <rbus/rbus_value.h>
-#include "webcfg.h"
-#include "webcfg_log.h"
-
-
 #ifndef _WEBCFG_METHOD_H_
 #define _WEBCFG_METHOD_H_
 
-bool isRbusMethodName(const param_t paramVal[], const unsigned int paramCount);
-void handleMethod_rbus(const param_t paramVal[], WDMP_STATUS *retStatus, int *ccspStatus);
+#include <stdbool.h>
+#include <rbus/rbus.h>
+#include <rbus/rbus_object.h>
+#include <rbus/rbus_value.h>
+#include "webcfg.h"
+#include "webcfg_log.h"
+#include <wdmp-c.h>
+
+bool isRbusMethodName(const char *name);
+void setMethod_rbus(const param_t paramVal[], int methodCount, WDMP_STATUS *retStatus, int *ccspRetStatus);
+
 #endif

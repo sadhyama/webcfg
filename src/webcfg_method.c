@@ -13,97 +13,87 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
 #include <wdmp-c.h>
-#include "webcfg_rbus.h"
 #include "webcfg_method.h"
+#include "webcfg_rbus.h"
 
 
-bool isRbusMethodName(const param_t paramVal[], const unsigned int paramCount)
+
+bool isRbusMethodName(const char *name)
 {
-    if (paramVal == NULL || paramCount == 0)
+    if (name == NULL || name[0] == '\0')
     {
-        WebcfgError("[DEBUG] isRbusMethodName: Invalid input param list\n");
+        WebcfgError("[DEBUG] isRbusMethodName: Param name is NULL or empty\n");
         return false;
     }
 
-    for (unsigned int i = 0; i < paramCount; i++)
+    size_t len = strnlen(name, MAX_BUF_SIZE);
+    if (len >= MAX_BUF_SIZE)
     {
-        const char* name = paramVal[i].name;
-
-        if (name == NULL || name[0] == '\0')
-        {
-            WebcfgError("[DEBUG] isRbusMethodName: param[%u] has NULL or empty name\n", i);
-            return false;
-        }
-
-        size_t len = strnlen(name, MAX_BUF_SIZE);
-        if (len >= MAX_BUF_SIZE)
-        {
-            WebcfgError("[DEBUG] isRbusMethodName: param[%u] name too long or unterminated\n", i);
-            return false;
-        }
-
-        if (!(len >= 2 && name[len - 2] == '(' && name[len - 1] == ')'))
-        {
-            WebcfgInfo("[DEBUG] isRbusMethodName: param[%u] is not a valid method name: '%s'\n", i, name);
-            return false;
-        }
-
-        WebcfgInfo("[DEBUG] isRbusMethodName: Valid method name found in param[%u]: '%s'\n", i, name);
+        WebcfgError("[DEBUG] isRbusMethodName: Param name too long or unterminated\n");
+        return false;
     }
 
+    if (!(len >= 2 && name[len - 2] == '(' && name[len - 1] == ')'))
+    {
+        WebcfgInfo("[DEBUG] isRbusMethodName: Not a valid method name: '%s'\n", name);
+        return false;
+    }
+
+    WebcfgInfo("[DEBUG] isRbusMethodName: Valid method name: '%s'\n", name);
     return true;
 }
 
-void handleMethod_rbus(const param_t paramVal[], WDMP_STATUS *retStatus, int *ccspStatus)
+void setMethod_rbus(const param_t paramVal[], int methodCount, WDMP_STATUS *retStatus, int *ccspRetStatus)
 {
-    WebcfgInfo("Inside handleMethod_rbus\n");
-    rbusError_t ret = RBUS_ERROR_BUS_ERROR;
-    rbusObject_t inParams = NULL;
-    rbusObject_t outParams = NULL;
-    rbusValue_t val = NULL;
-
-    *retStatus = WDMP_FAILURE;
+    if(!paramVal || methodCount<=0)
+    {
+        WebcfgError("setMethod_rbus: Invalid input parameters\n"); 
+        return;
+    }
 
     rbusHandle_t rbus_handle = get_global_rbus_handle();
 
     if (!rbus_handle)
     {
-        WebcfgError("handleMethod_rbus failed: rbus_handle is not initialized\n");
+        WebcfgError("setMethod_rbus: rbus_handle not initialized\n");
         return;
     }
 
-    if (!paramVal || !paramVal[0].name || !paramVal[0].value)
+    for (int i = 0; i < methodCount; i++)
     {
-        WebcfgError("handleMethod_rbus: Invalid param input\n");
-        *retStatus = WDMP_ERR_INVALID_PARAM;
-        return;
+        if(!paramVal[i].name || !paramVal[i].value)
+        {
+            WebcfgError("setMethod_rbus: Invalid param at index %d\n", i);
+            *retStatus = WDMP_ERR_INVALID_PARAMETER_VALUE;
+            *ccspRetStatus = CCSP_ERR_INVALID_PARAMETER_VALUE;
+            return;
+        }
+
+        WebcfgInfo("Invoking rbus method.... %s\n", paramVal[i].name);
+
+        rbusObject_t inParams = NULL, outParams = NULL;
+        rbusValue_t val = NULL;
+        rbusError_t ret = RBUS_ERROR_BUS_ERROR;
+
+        rbusObject_Init(&inParams, NULL);
+        rbusValue_Init(&val);
+        rbusValue_SetString(val, paramVal[i].value);
+        rbusObject_SetValue(inParams, "encoded_blob", val);
+        
+        ret = rbusMethod_Invoke(rbus_handle, paramVal[i].name, inParams, &outParams);
+        WebcfgInfo("rbusMethod_Invoke(%s) returned: %d\n", paramVal[i].name, ret);
+
+        *ccspRetStatus = mapRbusToCcspStatus((int)ret);
+        *retStatus = mapStatus(*ccspRetStatus);
+
+        WebcfgInfo("ccspRetStatus is %d\n", *ccspRetStatus);
+
+        rbusValue_Release(val);
+        rbusObject_Release(inParams);
+        if (outParams)
+            rbusObject_Release(outParams);
     }
-
-    WebcfgInfo("handleMethod_rbus: methodName = %s, value = %s, type = %d\n", 
-                paramVal[0].name, paramVal[0].value, paramVal[0].type);
-
-    rbusObject_Init(&inParams, NULL);
-    rbusValue_Init(&val);
-    rbusValue_SetString(val, paramVal[0].value);
-    rbusObject_SetValue(inParams, "encoded_blob", val);
-
-    WebcfgInfo("Calling rbusMethod_Invoke..\n");
-    ret = rbusMethod_Invoke(rbus_handle, paramVal[0].name, inParams, &outParams);
-    WebcfgInfo("rbusMethod_Invoke returned: %d\n", ret);
-
-    *ccspStatus = mapRbusToCcspStatus(ret);
-    *retStatus = mapStatus(*ccspStatus);
-
-    rbusValue_Release(val);
-    rbusObject_Release(inParams);
-    if (outParams)
-    {
-        rbusObject_Release(outParams);
-    }
-    return;
 }

@@ -28,6 +28,7 @@
 #include "webcfg_event.h"
 #include "webcfg_metadata.h"
 #include "webcfg_timer.h"
+#include "webcfg_method.h"
 
 #ifdef FEATURE_SUPPORT_AKER
 #include "webcfg_aker.h"
@@ -589,8 +590,8 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 {
 	int i =0;
 	WEBCFG_STATUS rv = WEBCFG_FAILURE;
-	param_t *reqParam = NULL;
-	WDMP_STATUS ret = WDMP_FAILURE;
+	param_t *reqParam = NULL, *methodParam = NULL;
+	WDMP_STATUS ret = WDMP_FAILURE, mRet = WDMP_FAILURE;
 	WDMP_STATUS errd = WDMP_FAILURE;
 	char errDetails[MAX_VALUE_LEN]={0};
 	char result[MAX_VALUE_LEN]={0};
@@ -716,15 +717,24 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 		{
 			paramCount = (int)pm->entries_count;
 
-			reqParam = (param_t *) malloc(sizeof(param_t) * paramCount);
-			memset(reqParam,0,(sizeof(param_t) * paramCount));
+			reqParam = (param_t *)calloc(paramCount, sizeof(param_t));
+			methodParam = (param_t *)calloc(paramCount, sizeof(param_t));
+
+			if(reqParam == NULL || methodParam == NULL)
+			{
+				WebcfgError("Memory allocation failed\n");
+				return rv;
+			}
 
 			WebcfgDebug("paramCount is %d\n", paramCount);
+
+			int rCnt = 0, mCnt = 0;
 			
 			for (i = 0; i < paramCount; i++) 
 			{
-                                if(pm->entries[i].value != NULL)
-                                {
+				int methodFlag = 0;
+				if(pm->entries[i].value != NULL)
+				{
 					if(pm->entries[i].type == WDMP_BLOB)
 					{
 						char *appended_doc = NULL;	
@@ -734,27 +744,44 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 							WebcfgDebug("webcfg_appendeddoc doc_transId : %hu\n", doc_transId);
 							if(pm->entries[i].name !=NULL)
 							{
-								reqParam[i].name = strdup(pm->entries[i].name);
+								if(isRbusMethodName(pm->entries[i].name))
+								{
+									methodFlag = 1;
+									methodParam[mCnt].name = strdup(pm->entries[i].name);
+								}
+								else
+								{
+									methodFlag = 0;
+									reqParam[rCnt].name = strdup(pm->entries[i].name);
+								}
 							}
 							#ifdef WEBCONFIG_BIN_SUPPORT
 								if(isRbusEnabled() && isRbusListener(mp->name_space))
 								{
 									//Setting reqParam struct to avoid validate_request_param() failure
 									//disable string operation as it is binary data.
-									reqParam[i].value = appended_doc;
+									reqParam[rCnt].value = appended_doc;
 									//setting reqParam type as base64 to indicate blob
-									reqParam[i].type = WDMP_BASE64;
-									buff = reqParam[i].value;
+									reqParam[rCnt].type = WDMP_BASE64;
+									buff = reqParam[rCnt].value;
 								}
 								else
 								{
-									reqParam[i].value = strdup(appended_doc);
-									reqParam[i].type = WDMP_BASE64;
+									if(methodFlag)
+									{
+										methodParam[mCnt].value =strdup(appended_doc);
+										methodParam[mCnt].type = WDMP_BASE64;
+									}
+									else
+									{
+										reqParam[rCnt].value = strdup(appended_doc);
+										reqParam[rCnt].type = WDMP_BASE64;
+									}
 									WEBCFG_FREE(appended_doc);
 								}
 							#else
-								reqParam[i].value = strdup(appended_doc);
-								reqParam[i].type = WDMP_BASE64;
+								reqParam[rCnt].value = strdup(appended_doc);
+								reqParam[rCnt].type = WDMP_BASE64;
 								WEBCFG_FREE(appended_doc);
 							#endif
 						}
@@ -766,23 +793,35 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 					{
 						if(pm->entries[i].name !=NULL)
 						{
-							reqParam[i].name = strdup(pm->entries[i].name);
+							reqParam[rCnt].name = strdup(pm->entries[i].name);
 						}
 						if(pm->entries[i].value !=NULL)
 						{
-							reqParam[i].value = strdup(pm->entries[i].value);
+							reqParam[rCnt].value = strdup(pm->entries[i].value);
 						}
-						reqParam[i].type = pm->entries[i].type;
+						reqParam[rCnt].type = pm->entries[i].type;
 					}
-                                }
-				WebcfgInfo("Request:> param[%d].name = %s, type = %d\n",i,reqParam[i].name,reqParam[i].type);
-				WebcfgDebug("Request:> param[%d].value = %s\n",i,reqParam[i].value);
-				WebcfgDebug("Request:> param[%d].type = %d\n",i,reqParam[i].type);
+                }
+
+				if(methodFlag)
+				{
+					WebcfgInfo("Request:> param[%d].name = %s, type = %d\n",mCnt,methodParam[mCnt].name,methodParam[mCnt].type);
+					WebcfgDebug("Request:> param[%d].value = %s\n",mCnt,methodParam[mCnt].value);
+					WebcfgInfo("Request:> param[%d].type = %d\n",mCnt,methodParam[mCnt].type);
+					mCnt++;
+				}
+				else
+				{
+					WebcfgInfo("Request:> param[%d].name = %s, type = %d\n",rCnt,reqParam[rCnt].name,reqParam[rCnt].type);
+					WebcfgDebug("Request:> param[%d].value = %s\n",rCnt,reqParam[rCnt].value);
+					WebcfgInfo("Request:> param[%d].type = %d\n",rCnt,reqParam[rCnt].type);
+					rCnt++;
+				}
 			}
 
-			if(reqParam !=NULL && validate_request_param(reqParam, paramCount) == WEBCFG_SUCCESS)
+			if((reqParam !=NULL && validate_request_param(reqParam, rCnt) == WEBCFG_SUCCESS) || (methodParam != NULL && validate_request_param(methodParam, mCnt) == WEBCFG_SUCCESS))
 			{
-				WebcfgDebug("Proceed to setValues..\n");
+				WebcfgInfo("Proceed to setValues..\n");
 				if((checkAndUpdateTmpRetryCount(subdoc_node, mp->name_space))== WEBCFG_SUCCESS)
 				{
 					WebcfgDebug("WebConfig SET Request\n");
@@ -797,8 +836,17 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 						//rbus_enabled and rbus_listener_not_supported, rbus_set api used to send b64 encoded data to component.
 						else 
 						{
+							if (rCnt > 0)
+							{
+								WebcfgInfo("[DEBUG] Calling setValues_rbus with reqParam\n");
+								setValues_rbus(reqParam, rCnt, ATOMIC_SET_WEBCONFIG, NULL, NULL, &ret, &ccspStatus);
+							}
 
-							setValues_rbus(reqParam, paramCount, ATOMIC_SET_WEBCONFIG, NULL, NULL, &ret, &ccspStatus);
+							if (mCnt > 0)
+							{
+								WebcfgInfo("[DEBUG] setMethod_rbus invoked with methodParam\n");
+								setMethod_rbus(methodParam, mCnt, &mRet, &ccspStatus);
+							}
 						}
 					#else
 					        //dbus_enabled, ccsp common library set api used to send data to component.
@@ -806,17 +854,25 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 					#endif
 					
 					
-					if(ret == WDMP_SUCCESS)
+					if(ret == WDMP_SUCCESS || mRet == WDMP_SUCCESS)
 					{
 						WebcfgInfo("setValues success. ccspStatus : %d\n", ccspStatus);
-						WebcfgDebug("reqParam[0].type is %d WDMP_BASE64 %d\n", reqParam[0].type, WDMP_BASE64);
-						if(reqParam[0].type  == WDMP_BASE64)
+						if(rCnt > 0)
 						{
-							WebcfgDebug("blob subdoc set is success\n");
+							WebcfgDebug("reqParam[0].type is %d WDMP_BASE64 %d\n", reqParam[0].type, WDMP_BASE64);
+						}
+						if(mCnt > 0)
+						{
+							WebcfgDebug("methodParam[0].type is %d WDMP_BASE64 %d\n", methodParam[0].type, WDMP_BASE64);
+						}
+
+						if(reqParam[0].type == WDMP_BASE64 || methodParam[0].type == WDMP_BASE64)
+						{
+							WebcfgInfo("blob subdoc set is success\n");
 						}
 						else
 						{
-							WebcfgDebug("update doc status for %s\n", mp->name_space);
+							WebcfgInfo("update doc status for %s\n", mp->name_space);
 							updateTmpList(subdoc_node, mp->name_space, mp->etag, "success", "none", 0, 0, 0);
 							//send success notification to cloud
 							WebcfgDebug("send notify for mp->name_space %s\n", mp->name_space);
@@ -925,6 +981,10 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 								{
 									reqParam_destroy(paramCount, reqParam);
 								}
+								if(NULL != methodParam)
+								{
+									methodParam_destroy(paramCount, methodParam);
+								}
 								webcfgparam_destroy( pm );
 								break;
 							}
@@ -960,6 +1020,10 @@ WEBCFG_STATUS processMsgpackSubdoc(char *transaction_id)
 				if(NULL != reqParam)
 				{
 					reqParam_destroy(paramCount, reqParam);
+				}
+				if(NULL != methodParam)
+				{
+					methodParam_destroy(paramCount, methodParam);
 				}
 			}
 			else
@@ -2379,6 +2443,26 @@ void reqParam_destroy( int paramCnt, param_t *reqObj )
 	}
 }
 
+void methodParam_destroy( int paramCnt, param_t *reqObj )
+{
+	int i = 0;
+	if(reqObj)
+	{
+		for (i = 0; i < paramCnt; i++)
+		{
+			if(reqObj[i].name)
+			{
+				free(reqObj[i].name);
+			}
+			if(reqObj[i].value)
+			{
+				free(reqObj[i].value);
+			}
+		}
+		free(reqObj);
+	}
+}
+
 //Root will be the first doc always in tmp list and will be deleted when all the docs are success. Delete root doc from tmp list when all primary and supplementary docs are success.
 WEBCFG_STATUS checkRootDelete()
 {
@@ -2503,7 +2587,7 @@ WEBCFG_STATUS deleteRootAndMultipartDocs()
 		reset_numOfMpDocs();
 		delete_tmp_list();
 		delete_multipart();
-		WebcfgDebug("After free mp\n");
+		WebcfgInfo("deleteRootAndMultipartDocs: After free mp\n");
 	}
 	return WEBCFG_SUCCESS;
 }

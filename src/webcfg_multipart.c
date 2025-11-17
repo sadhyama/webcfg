@@ -250,7 +250,7 @@ WEBCFG_STATUS webcfg_http_request(char **configData, int r_count, int status, lo
 				docname_upper[0] = toupper(docname_upper[0]);
 				WebcfgDebug("docname is %s and in uppercase is %s\n", docname, docname_upper);
 				Get_Supplementary_URL(docname_upper, configURL);
-				WebcfgDebug("Supplementary sync url fetched is %s\n", configURL);
+				WebcfgInfo("Supplementary sync url fetched is %s\n", configURL);
 				if( strcmp(configURL, "NULL") == 0)
 				{
 					WebcfgInfo("Supplementary sync with cloud is disabled as configURL is NULL\n");
@@ -266,8 +266,15 @@ WEBCFG_STATUS webcfg_http_request(char **configData, int r_count, int status, lo
 			//Replace {mac} string from default init url with actual deviceMAC
 			WebcfgDebug("replaceMacWord to actual device mac\n");
 			webConfigURL = replaceMacWord(configURL, c, get_deviceMAC());
+			if(webConfigURL == NULL)
+			{
+				WebcfgError("replaceMacWord returned NULL. Failed to set webConfigURL\n");
+                return WEBCFG_FAILURE;
+			}
+			WebcfgInfo("[DEBUG] replaceMacWord returned: %s\n", webConfigURL);
 			//Check the url is having empty mac or actual devicemac
 			checkValidURL(&webConfigURL);
+			WebcfgInfo("[DEBUG] After checkValidURL webconfigURL: %s\n", webConfigURL ? webConfigURL : "NULL");
 			if(get_global_supplementarySync() == 0)
 			{
 				rc = Set_Webconfig_URL(webConfigURL);
@@ -2271,7 +2278,7 @@ void checkValidURL(char **s) {
             while (1) {
                 if (backoffRetryTime <= maxRetryTime) 
                 {
-                    backoffRetryTime = (int)pow(2, c) - 1;
+                    backoffRetryTime = (1 << c) - 1;
                 }        
                 const char *mac = get_deviceMAC();
                 if (mac != NULL && strncmp(mac, "000000000000", 12) != 0)
@@ -2326,36 +2333,49 @@ char *replaceMacWord(const char *s, const char *macW, const char *deviceMACW)
 	char *result = NULL;
 	int i, cnt = 0;
 
-	if(deviceMACW != NULL)
+	// When device mac is NULL replace with a fallback mac
+	if(deviceMACW == NULL)
 	{
-		int deviceMACWlen = strlen(deviceMACW);
-		int macWlen = strlen(macW);
-		// Counting the number of times mac word occur in the string
-		for (i = 0; s[i] != '\0'; i++)
-		{
-			if (strstr(&s[i], macW) == &s[i])
-			{
-			    cnt++;
-			    // Jumping to index after the mac word.
-			    i += macWlen - 1;
-			}
-		}
-
-		result = (char *)malloc(i + cnt * (deviceMACWlen - macWlen) + 1);
-		i = 0;
-		while (*s)
-		{
-			if (strstr(s, macW) == s)
-			{
-				strcpy(&result[i], deviceMACW);
-				i += deviceMACWlen;
-				s += macWlen;
-			}
-			else
-			    result[i++] = *s++;
-		}
-		result[i] = '\0';
+		WebcfgInfo("Device mac is NULL, replacing with a fallback mac\n");
+		deviceMACW = "000000000000";
 	}
+
+	int deviceMACWlen = strlen(deviceMACW);
+	int macWlen = strlen(macW);
+
+	// Counting the number of times mac word occur in the string
+	for (i = 0; s[i] != '\0'; i++)
+	{
+		if (strstr(&s[i], macW) == &s[i])
+		{
+			cnt++;
+			// Jumping to index after the mac word.
+			i += macWlen - 1;
+		}
+	}
+
+	result = (char *)malloc(i + cnt * (deviceMACWlen - macWlen) + 1);
+	if(result == NULL)
+	{
+		WebcfgError("malloc failed for result\n");
+		return NULL;
+	}
+
+	i = 0;
+	while (*s)
+	{
+		if (strstr(s, macW) == s)
+		{
+			strcpy(&result[i], deviceMACW);
+			i += deviceMACWlen;
+			s += macWlen;
+		}
+		else
+		{
+			result[i++] = *s++;
+		}
+	}
+	result[i] = '\0';
 	return result;
 }
 

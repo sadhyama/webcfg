@@ -233,7 +233,7 @@ void *WebConfigMultipartTask(void *status)
 				{
 					WEBCFG_FREE(ForceSyncTransID);
 				}
-				WebcfgDebug("Triggered Supplementary doc boot sync\n");
+				WebcfgInfo("Triggered Supplementary doc boot sync\n");
 				SupplementaryDocs_t *sp = NULL;
 				sp = get_global_spInfoHead();
 
